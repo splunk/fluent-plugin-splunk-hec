@@ -1,0 +1,12 @@
+language: ruby
+rvm:
+  - 2.3
+  - 2.4
+  - 2.5
+# deploy:
+#   provider: rubygems
+#   gemspec: fluent-plugin-splunk-hec.gemspec
+#   on:
+#     tags: true
+#   api_key:
+#     secure: blah blah blah
