@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fluent-plugin-splunk_hec_output (1.0.0.pre.alpha.1)
+    fluent-plugin-splunk-hec (1.0.0)
       fluentd (~> 1.0)
       net-http-persistent (~> 3.0)
 
@@ -28,11 +28,11 @@ GEM
       yajl-ruby (~> 1.0)
     hashdiff (0.3.7)
     http_parser.rb (0.6.0)
-    minitest (5.11.1)
+    minitest (5.11.3)
     msgpack (1.2.2)
     net-http-persistent (3.0.0)
       connection_pool (~> 2.2)
-    public_suffix (3.0.1)
+    public_suffix (3.0.2)
     rake (10.5.0)
     safe_yaml (1.0.4)
     serverengine (2.0.6)
@@ -40,9 +40,9 @@ GEM
     sigdump (0.2.4)
     strptime (0.2.3)
     thread_safe (0.3.6)
-    tzinfo (1.2.4)
+    tzinfo (1.2.5)
       thread_safe (~> 0.1)
-    tzinfo-data (1.2017.3)
+    tzinfo-data (1.2018.3)
       tzinfo (>= 1.0.0)
     webmock (3.3.0)
       addressable (>= 2.3.6)
@@ -55,10 +55,10 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 1.16)
-  fluent-plugin-splunk_hec_output!
+  fluent-plugin-splunk-hec!
   minitest (~> 5.0)
   rake (~> 10.0)
   webmock (~> 3.2)
 
 BUNDLED WITH
-   1.16.0
+   1.16.1
