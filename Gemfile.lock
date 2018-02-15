@@ -3,6 +3,7 @@ PATH
   specs:
     fluent-plugin-splunk-hec (1.0.0)
       fluentd (~> 1.0)
+      liquid (~> 4.0)
       net-http-persistent (~> 3.0)
 
 GEM
@@ -28,6 +29,7 @@ GEM
       yajl-ruby (~> 1.0)
     hashdiff (0.3.7)
     http_parser.rb (0.6.0)
+    liquid (4.0.0)
     minitest (5.11.3)
     msgpack (1.2.2)
     net-http-persistent (3.0.0)
