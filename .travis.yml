@@ -1,8 +1,9 @@
+sudo: required
 language: ruby
-rvm:
-  - 2.3
-  - 2.4
-  - 2.5
+services:
+  - docker
+install: echo skip install
+script: make test
 # deploy:
 #   provider: rubygems
 #   gemspec: fluent-plugin-splunk-hec.gemspec
