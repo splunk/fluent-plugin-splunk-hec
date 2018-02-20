@@ -1,6 +1,8 @@
 require "fluent/plugin/output"
+require "fluent/plugin/formatter_nil"
 
 require 'openssl'
+require 'multi_json'
 require 'net/http/persistent'
 
 module Fluent::Plugin
@@ -10,6 +12,21 @@ module Fluent::Plugin
     helpers :formatter
 
     autoload :VERSION, "fluent/plugin/out_splunk_hec/version"
+
+    desc <<~DESC
+    Specify which template engine to use to parse config values which support templates.
+    There are four options:
+    * `placeholder` - uses the placeholder expander comes with the fluentd built-in [`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer) filter plugin to support `${}` placeholders. Please check [the <record> directive document](https://docs.fluentd.org/v1.0/articles/filter_record_transformer#%3Crecord%3E-directive) for details.
+    * `ruby` - works exactly the same way when `enable_ruby` is set to `true` in [`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer). Please read [the `enable_ruby` document]([`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer#enable_ruby) for details.
+    * `jq` - uses the fast (written in C) and powerful [jq engine](https://stedolan.github.io/jq/) to render the value. The following variables are available:
+      - `.tag` refers to the whole tag.
+      - `.record` refers to the whole record(event).
+      - `.time` refers to stringanized event time.
+      - `.hostname` refers to machine’s hostname. The actual value is result of Socket.gethostname.
+      If you have lots of events to handle, using `jq` is recommended. To use this engine, you need to install the `ruby-jq` rubygem on your machine first.
+    * `none` - do not use any tempalte engine. All config values will just remain as what they are configured in the config file.
+    DESC
+    config_param :template_engine, :enum, list: %i[placeholder ruby jq none], default: :placeholder
 
     desc 'Which protocol to use to call HEC api, "http" or "https", default "https".'
     config_param :protocol, :enum, list: %i[http https], default: :https
@@ -23,41 +40,35 @@ module Fluent::Plugin
     desc 'The HEC token.'
     config_param :hec_token, :string
 
-    desc 'SSL configurations.'
-    config_section :ssl, param_name: 'ssl', required: false, multi: false, init: true do
-      desc "The path to a file containing a PEM-format CA certificate for this client."
-      config_param :client_cert, :string, default: nil
+    desc "The path to a file containing a PEM-format CA certificate for this client."
+    config_param :client_cert, :string, default: nil
 
-      desc 'The path to a file containing a PEM-format CA certificate.'
-      config_param :ca_file, :string, default: nil
+    desc "The private key for this client."
+    config_param :client_key, :string, default: nil
 
-      desc 'The path to a directory containing CA certificates in PEM format.'
-      config_param :ca_path, :string, default: nil
+    desc 'The path to a file containing a PEM-format CA certificate.'
+    config_param :ca_file, :string, default: nil
 
-      desc 'List of SSl ciphers allowed.'
-      config_param :ciphers, :array, default: nil
+    desc 'The path to a directory containing CA certificates in PEM format.'
+    config_param :ca_path, :string, default: nil
 
-      desc "The client's SSL private key."
-      config_param :client_pkey, :string, default: nil
+    desc 'List of SSL ciphers allowed.'
+    config_param :ssl_ciphers, :array, default: nil
 
-      desc "If `insecure` is set to true, it will not verify the server's certificate. If `ca_file` or `ca_path` is set, `insecure` will be ignored."
-      config_param :insecure, :bool, default: false
-    end
+    desc "Indicates if insecure SSL connection is allowed."
+    config_param :insecure_ssl, :bool, default: false
 
-    desc 'The Splunk index indexs events, by default it is not set, and will use what is configured in the HTTP input. Liquid template is supported.'
+    desc 'The Splunk index indexs events, by default it is not set, and will use what is configured in the HTTP input. Template is supported.'
     config_param :index, :string, default: nil
 
-    desc "Set the host field for events, by default it's the hostname of the machine that runnning fluentd. Liquid template is supported."
+    desc "Set the host field for events, by default it's the hostname of the machine that runnning fluentd. Template is supported."
     config_param :host, :string, default: nil
 
-    desc "The source will be applied to the events, by default it uses the event's tag. Liquid template is supported."
+    desc "The source will be applied to the events, by default it uses the event's tag. Template is supported."
     config_param :source, :string, default: nil
 
-    desc 'The sourcetype will be applied to the events, by default it is not set, and leave it to Splunk to figure it out. Liquid template is supported.'
+    desc 'The sourcetype will be applied to the events, by default it is not set, and leave it to Splunk to figure it out. Template is supported.'
     config_param :sourcetype, :string, default: nil
-
-    desc 'Disable Liquid template support. Once disabled, it cannot use Liquid templates in the `host`, `index`, `source`, `sourcetype` fields.'
-    config_param :disable_template, :bool, default: false
 
     # Whether to allow non-UTF-8 characters in user logs. If set to true, any
     # non-UTF-8 character would be replaced by the string specified by
@@ -79,6 +90,7 @@ module Fluent::Plugin
       super
       @default_host = Socket.gethostname
       @chunk_queue = SizedQueue.new 1
+      @template_fields = %w[@index @host @source @sourcetype]
     end
 
     def configure(conf)
@@ -96,21 +108,17 @@ module Fluent::Plugin
     end
 
     def format(tag, time, record)
-      values = {
-	'tag' => tag,
-	'record' => record
-      }
       event = @formatter ? @formatter.format(tag, time, record) : record
 
-      {
-	host: @host ? @host.render(values) : @default_host,
-	source: @source ? @source.render(values) : tag,
+      MultiJson.dump({
+	host: @host ? @host.(tag, time, record) : @default_host,
+	source: @source ? @source.(tag, time, record) : tag,
         event: convert_to_utf8(event),
 	time: time.to_i
       }.tap { |payload|
-	payload.update sourcetype: @sourcetype.render(values) if @sourcetype
-	payload.update index: @index.render(values) if @index
-      }.to_json
+	payload.update sourcetype: @sourcetype.(tag, time, record) if @sourcetype
+	payload.update index: @index.(tag, time, record) if @index
+      })
     end
 
     def try_write(chunk)
@@ -130,26 +138,82 @@ module Fluent::Plugin
     private
 
     def prepare_templates
-      template_fields = %w[@index @host @source @sourcetype]
-
-      if @disable_template
-	# provides `render` method when template is diabled, so that
-	# we can handle the fields in the same ways no matter if templating
-	# is enabled or not.
-	self_render = Module.new {
-	  def render(*args) self end
-	}
-	template_fields.each { |field|
-	  v = instance_variable_get field
-	  v.extend self_render if v
-	}
-      else
-	require 'liquid'
-	template_fields.each { |field|
-	  v = instance_variable_get field
-	  instance_variable_set field, Liquid::Template.parse(v) if v
-	}
+      case @template_engine
+      when :jq
+	use_jq_template
+      when :ruby, :placeholder
+	use_placeholder_template
+      else # none
+	use_none_template
       end
+    end
+
+    def use_jq_template
+      begin
+	require 'jq'
+      rescue LoadError
+	raise Fluent::ConfigError, "`template_engine` is set to `jq`, but `ruby-jq` is not installed. Run `gem install ruby-jq` to install it."
+      end
+
+      @template_fields.each { |field|
+	v = instance_variable_get field
+	if v
+	  begin
+	    program = JQ::Core.new v
+	  rescue JQ::Error
+	    raise Fluent::ConfigError, "Invalid jq filter for #{field}: #{v}"
+	  end
+	  instance_variable_set field, ->(tag, time, record) {
+	    ''.tap do |ret|
+	      json = MultiJson.dump(
+		'tag'.freeze      => tag,
+		'time'.freeze     => Time.at(time).to_s,
+		'record'.freeze   => record,
+		'hostname'.freeze => @default_host
+	      )
+	      program.update(json, false) { |r| ret << MultiJson.load("[#{r}]").first }
+	    end
+	  }
+	end
+      }
+    end
+
+    def use_placeholder_template
+      require 'fluent/plugin/filter_record_transformer'
+      expander =
+	if @template_engine == :ruby
+	  # require utilities which would be used in ruby placeholders
+	  require 'pathname'
+	  require 'uri'
+	  require 'cgi'
+	  Fluent::Plugin::RecordTransformerFilter::RubyPlaceholderExpander
+	else
+	  Fluent::Plugin::RecordTransformerFilter::PlaceholderExpander
+	end \
+	  .new(log: log, auth_typecast: true)
+
+      @template_fields.each { |field|
+	v = instance_variable_get field
+	if v
+	  v = expander.preprocess_map(v)
+	  instance_variable_set field, ->(tag, time, record) {
+	    expander.expand(v, expander.prepare_placeholders(
+	      'tag'.freeze       => tag,
+	      'tag_parts'.freeze => tag.split('.'),
+	      'time'.freeze      => expander.time_value(time),
+	      'hostname'.freeze  => @default_host,
+	      'record'.freeze    => record
+	    ))
+	  }
+	end
+      }
+    end
+
+    def use_none_template
+      @template_fields.each { |field|
+	v = instance_variable_get field
+	instance_variable_set field, ->(tag, time, record) { v } if v
+      }
     end
 
     def construct_api
@@ -175,12 +239,12 @@ module Fluent::Plugin
 
     def new_connection
       Net::HTTP::Persistent.new.tap do |c|
-	c.verify_mode = @ssl.insecure ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
-	c.cert = OpenSSL::X509::Certificate.new File.read(@ssl.client_cert) if @ssl.client_cert
-	c.key = OpenSSL::PKey::RSA.new File.read(@ssl.client_pkey) if @ssl.client_pkey
-	c.ca_file = @ssl.ca_file
-	c.ca_path = @ssl.ca_path
-	c.ciphers = @ssl.ciphers
+	c.verify_mode = @insecure_ssl ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+	c.cert = OpenSSL::X509::Certificate.new File.read(@client_cert) if @client_cert
+	c.key = OpenSSL::PKey::RSA.new File.read(@client_key) if @client_key
+	c.ca_file = @ca_file
+	c.ca_path = @ca_path
+	c.ciphers = @ssl_ciphers
 
 	c.override_headers['Content-Type'] = 'application/json'
 	c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"

@@ -3,7 +3,7 @@ PATH
   specs:
     fluent-plugin-splunk-hec (1.0.0)
       fluentd (~> 1.0)
-      liquid (~> 4.0)
+      multi_json (~> 1.13)
       net-http-persistent (~> 3.0)
 
 GEM
@@ -29,14 +29,16 @@ GEM
       yajl-ruby (~> 1.0)
     hashdiff (0.3.7)
     http_parser.rb (0.6.0)
-    liquid (4.0.0)
     minitest (5.11.3)
     msgpack (1.2.2)
+    multi_json (1.13.1)
     net-http-persistent (3.0.0)
       connection_pool (~> 2.2)
     power_assert (1.1.1)
     public_suffix (3.0.2)
     rake (10.5.0)
+    ruby-jq (0.1.7)
+      multi_json
     safe_yaml (1.0.4)
     serverengine (2.0.6)
       sigdump (~> 0.2.2)
@@ -63,6 +65,7 @@ DEPENDENCIES
   fluent-plugin-splunk-hec!
   minitest (~> 5.0)
   rake (~> 10.0)
+  ruby-jq (~> 0.1)
   test-unit (~> 3.0)
   webmock (~> 3.2)
 

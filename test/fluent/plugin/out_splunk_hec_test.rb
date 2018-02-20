@@ -39,20 +39,61 @@ describe Fluent::Plugin::SplunkHecOutput do
       }
     end
 
-    describe "use liquid templates" do
-      it "can use tag" do
-	verify_sent_events(%q<source "{{ tag | split: '.' | join: '-'}}">) { |r|
-	  expect(r.body).must_match(/"source"\s*:\s*"tag-event1"/)
-	  expect(r.body).must_match(/"source"\s*:\s*"tag-event2"/)
-	}
-      end
+    it "should support placeholder templates" do
+      verify_sent_events(%q<source '${tag}_${tag_parts[0]}-${tag_parts[1]}_${hostname}_${time}_${record["id"]}'>) { |r|
+	expect(r.body.scan(
+	  /"source"\s*:\s*"
+	  tag.event(?:1|2)_
+	  tag-event(?:1|2)_
+	  #{Socket.gethostname}_
+	  #{Time.now.to_s.split(' ')[0]}[^"]*_
+	  (?:1st|2nd)
+	  "/x
+	).size).must_equal 2
+      }
+    end
 
-      it "can use record" do
-	verify_sent_events('source "{{ record.id }}"') { |r|
-	  expect(r.body).must_match(/"source"\s*:\s*"1st"/)
-	  expect(r.body).must_match(/"source"\s*:\s*"2nd"/)
-	}
-      end
+    it "should support ruby templates" do
+      verify_sent_events(<<~CONF) { |r|
+	template_engine ruby
+        source "${
+	  tag + '_' +
+	  tag_parts.join('-') + '_' +
+	  hostname + '_' +
+	  time.to_s.split(' ')[0] + '_' +
+	  (record['id'] == '1st' ? 'first' : 'second')
+	}"
+      CONF
+	expect(r.body.scan(
+	  /"source"\s*:\s*"
+	  tag.event(?:1|2)_
+	  tag-event(?:1|2)_
+	  #{Socket.gethostname}_
+	  #{Time.now.to_s.split(' ')[0]}_
+	  (?:first|second)
+	  "/x
+	).size).must_equal 2
+      }
+    end
+
+    it "should support jq tempalte" do
+      verify_sent_events(<<~CONF) { |r|
+	template_engine jq
+        source "(.tag | split(\\".\\") | join(\\"-\\")) + \\"_\\" +
+	  .hostname + \\"_\\" +
+	  (.time | split(\\" \\") | .[0]) + \\"_\\" +
+	  .record.id
+	"
+      CONF
+	expect(r.body.scan(
+	  /"source"\s*:\s*"
+	  tag-event(?:1|2)_
+	  #{Socket.gethostname}_
+	  #{Time.now.to_s.split(' ')[0]}_
+	  (?:1st|2nd)
+	  "/x
+	).size).must_equal 2
+      }
     end
   end
 
@@ -63,8 +104,8 @@ describe Fluent::Plugin::SplunkHecOutput do
       }
     end
 
-    it "should understand liquid tempaltes" do
-      verify_sent_events(%q<host "{{ tag | split: '.' | join: '-'}}">) { |r|
+    it "should support template" do
+      verify_sent_events(%q<host "${tag_parts[0]}-${tag_parts[1]}">) { |r|
 	expect(r.body).must_match(/"host"\s*:\s*"tag-event1"/)
 	expect(r.body).must_match(/"host"\s*:\s*"tag-event2"/)
       }
@@ -79,24 +120,24 @@ describe Fluent::Plugin::SplunkHecOutput do
       }
     end
 
-    it "should understand liquid tempaltes" do
-      verify_sent_events(%q<sourcetype "{{ tag | split: '.' | join: '-'}}">) { |r|
+    it "should support tempaltes" do
+      verify_sent_events(%q<sourcetype "${tag_parts[0]}-${tag_parts[1]}">) { |r|
 	expect(r.body).must_match(/"sourcetype"\s*:\s*"tag-event1"/)
 	expect(r.body).must_match(/"sourcetype"\s*:\s*"tag-event2"/)
       }
     end
   end
 
-  it "should be able to disable liquid tempalte" do
+  it "should be able to disable tempalte" do
     verify_sent_events(<<~CONF) { |r|
-      disable_template true
-      host "{{ host }}"
-      source "{{ source }}"
-      sourcetype "{{ sourcetype }}"
+      template_engine none
+      host "${hostname}"
+      source "${source}"
+      sourcetype "${sourcetype}"
     CONF
-      expect(r.body.scan(/"host"\s*:\s*"{{ host }}"/).size).must_equal 2
-      expect(r.body.scan(/"source"\s*:\s*"{{ source }}"/).size).must_equal 2
-      expect(r.body.scan(/"sourcetype"\s*:\s*"{{ sourcetype }}"/).size).must_equal 2
+      expect(r.body.scan(/"host"\s*:\s*"\${hostname}"/).size).must_equal 2
+      expect(r.body.scan(/"source"\s*:\s*"\${source}"/).size).must_equal 2
+      expect(r.body.scan(/"sourcetype"\s*:\s*"\${sourcetype}"/).size).must_equal 2
     }
   end
 

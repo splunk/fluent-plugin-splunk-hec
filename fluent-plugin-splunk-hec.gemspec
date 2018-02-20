@@ -24,18 +24,19 @@ Gem::Specification.new do |spec|
     CODE_OF_CONDUCT.md README.md LICENSE.txt
     fluent-plugin-splunk-hec.gemspec
     Gemfile Gemfile.lock
-    Rakefile
+    Rakefile VERSION
   ] + Dir.glob('lib/**/**').reject(&File.method(:directory?))
 
   spec.required_ruby_version = '>= 2.3.0'
 
   spec.add_runtime_dependency "fluentd", "~> 1.0"
+  spec.add_runtime_dependency "multi_json", "~> 1.13"
   spec.add_runtime_dependency "net-http-persistent", "~> 3.0"
-  spec.add_runtime_dependency "liquid", "~> 4.0"
 
   spec.add_development_dependency "bundler", "~> 1.16"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "test-unit", "~> 3.0" # required by fluent/test.rb
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "webmock", "~> 3.2"
+  spec.add_development_dependency "ruby-jq", "~> 0.1"
 end
