@@ -31,117 +31,105 @@ describe Fluent::Plugin::SplunkHecOutput do
     expect(req).must_be_requested times: 1
   end
 
-  describe "source" do
-    it "should use event tags by default" do
-      verify_sent_events() { |r|
-	expect(r.body).must_match(/"source"\s*:\s*"tag.event1"/)
-	expect(r.body).must_match(/"source"\s*:\s*"tag.event2"/)
-      }
-    end
+  it "should use event tags for source by default" do
+    verify_sent_events() { |r|
+      expect(r.body).must_match(/"source"\s*:\s*"tag.event1"/)
+      expect(r.body).must_match(/"source"\s*:\s*"tag.event2"/)
+    }
+  end
 
+  it "should use host machine's hostname for event host by default" do
+    verify_sent_events() { |r|
+      expect(r.body).must_match(/"host"\s*:\s*"#{Socket.gethostname}"/)
+    }
+  end
+
+  it "should not set sourcetype by default" do
+    verify_sent_events() { |r|
+      expect(r.body).wont_match(/"sourcetype"\s*:\s*"/)
+      true # `wont_match` returns `false` which will make webmock think it fails
+    }
+  end
+
+  describe "templating" do
     it "should support placeholder templates" do
-      verify_sent_events(%q<source '${tag}_${tag_parts[0]}-${tag_parts[1]}_${hostname}_${time}_${record["id"]}'>) { |r|
-	expect(r.body.scan(
-	  /"source"\s*:\s*"
-	  tag.event(?:1|2)_
-	  tag-event(?:1|2)_
-	  #{Socket.gethostname}_
-	  #{Time.now.to_s.split(' ')[0]}[^"]*_
-	  (?:1st|2nd)
-	  "/x
-	).size).must_equal 2
+      verify_sent_events(<<~CONF) { |r|
+	index idx-${hostname}
+	host ${tag}
+        source ${tag_parts[0]}-${tag_parts[1]}
+	sourcetype ${record["id"]}_${time}
+      CONF
+	expect(r.body.scan(/"index"\s*:\s*"idx-#{Socket.gethostname}"/).size).must_equal 2
+
+	expect(r.body).must_match(/"host"\s*:\s*"tag.event1"/)
+	expect(r.body).must_match(/"host"\s*:\s*"tag.event2"/)
+
+	expect(r.body).must_match(/"source"\s*:\s*"tag-event1"/)
+	expect(r.body).must_match(/"source"\s*:\s*"tag-event2"/)
+
+	expect(r.body).must_match(/"sourcetype"\s*:\s*"1st_#{Time.now.to_s.split(' ')[0]}/)
+	expect(r.body).must_match(/"sourcetype"\s*:\s*"2nd_#{Time.now.to_s.split(' ')[0]}/)
       }
     end
 
     it "should support ruby templates" do
       verify_sent_events(<<~CONF) { |r|
 	template_engine ruby
-        source "${
-	  tag + '_' +
-	  tag_parts.join('-') + '_' +
-	  hostname + '_' +
-	  time.to_s.split(' ')[0] + '_' +
-	  (record['id'] == '1st' ? 'first' : 'second')
-	}"
+	index idx-${hostname}
+	host ${"host-" + tag.split(".").last}
+	source ${tag_parts.join("-")}
+	sourcetype ${case record["id"] when '1st' then 'first' else 'second' end}_${time}
       CONF
-	expect(r.body.scan(
-	  /"source"\s*:\s*"
-	  tag.event(?:1|2)_
-	  tag-event(?:1|2)_
-	  #{Socket.gethostname}_
-	  #{Time.now.to_s.split(' ')[0]}_
-	  (?:first|second)
-	  "/x
-	).size).must_equal 2
+	expect(r.body.scan(/"index"\s*:\s*"idx-#{Socket.gethostname}"/).size).must_equal 2
+
+	expect(r.body).must_match(/"host"\s*:\s*"host-event1"/)
+	expect(r.body).must_match(/"host"\s*:\s*"host-event2"/)
+
+	expect(r.body).must_match(/"source"\s*:\s*"tag-event1"/)
+	expect(r.body).must_match(/"source"\s*:\s*"tag-event2"/)
+
+	expect(r.body).must_match(/"sourcetype"\s*:\s*"first_#{Time.now.to_s.split(' ')[0]}/)
+	expect(r.body).must_match(/"sourcetype"\s*:\s*"second_#{Time.now.to_s.split(' ')[0]}/)
       }
     end
 
-    it "should support jq tempalte" do
+    it "should support jq templates" do
       verify_sent_events(<<~CONF) { |r|
 	template_engine jq
-        source "(.tag | split(\\".\\") | join(\\"-\\")) + \\"_\\" +
-	  .hostname + \\"_\\" +
-	  (.time | split(\\" \\") | .[0]) + \\"_\\" +
-	  .record.id
-	"
+	index idx-{% .hostname %}
+	host '{% "host-" + ( .tag | split(".") | .[-1] ) %}'
+	source '.tag'
+	sourcetype '{% .record.id %}_{% .time %}'
       CONF
-	expect(r.body.scan(
-	  /"source"\s*:\s*"
-	  tag-event(?:1|2)_
-	  #{Socket.gethostname}_
-	  #{Time.now.to_s.split(' ')[0]}_
-	  (?:1st|2nd)
-	  "/x
-	).size).must_equal 2
+	expect(r.body.scan(/"index"\s*:\s*"idx-#{Socket.gethostname}"/).size).must_equal 2
+
+	expect(r.body).must_match(/"host"\s*:\s*"host-event1"/)
+	expect(r.body).must_match(/"host"\s*:\s*"host-event2"/)
+
+	expect(r.body.scan(/"source"\s*:\s*"\.tag"/).size).must_equal 2
+
+	expect(r.body).must_match(/"sourcetype"\s*:\s*"1st_#{Time.now.to_s.split(' ')[0]}/)
+	expect(r.body).must_match(/"sourcetype"\s*:\s*"2nd_#{Time.now.to_s.split(' ')[0]}/)
+      }
+    end
+
+    it "should be able to disable tempalte" do
+      verify_sent_events(<<~CONF) { |r|
+	template_engine none
+	index "${index}"
+	host "${hostname}"
+	source "${source}"
+	sourcetype "${sourcetype}"
+	CONF
+	expect(r.body.scan(/"index"\s*:\s*"\${index}"/).size).must_equal 2
+	expect(r.body.scan(/"host"\s*:\s*"\${hostname}"/).size).must_equal 2
+	expect(r.body.scan(/"source"\s*:\s*"\${source}"/).size).must_equal 2
+	expect(r.body.scan(/"sourcetype"\s*:\s*"\${sourcetype}"/).size).must_equal 2
       }
     end
   end
 
-  describe "host" do
-    it "should use host machine's hostname by default" do
-      verify_sent_events() { |r|
-	expect(r.body).must_match(/"host"\s*:\s*"#{Socket.gethostname}"/)
-      }
-    end
-
-    it "should support template" do
-      verify_sent_events(%q<host "${tag_parts[0]}-${tag_parts[1]}">) { |r|
-	expect(r.body).must_match(/"host"\s*:\s*"tag-event1"/)
-	expect(r.body).must_match(/"host"\s*:\s*"tag-event2"/)
-      }
-    end
-  end
-
-  describe "sourcetype" do
-    it "should not be set by default" do
-      verify_sent_events() { |r|
-	expect(r.body).wont_match(/"sourcetype"\s*:\s*"/)
-	true # `wont_match` returns `false` which will make webmock think it fails
-      }
-    end
-
-    it "should support tempaltes" do
-      verify_sent_events(%q<sourcetype "${tag_parts[0]}-${tag_parts[1]}">) { |r|
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"tag-event1"/)
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"tag-event2"/)
-      }
-    end
-  end
-
-  it "should be able to disable tempalte" do
-    verify_sent_events(<<~CONF) { |r|
-      template_engine none
-      host "${hostname}"
-      source "${source}"
-      sourcetype "${sourcetype}"
-    CONF
-      expect(r.body.scan(/"host"\s*:\s*"\${hostname}"/).size).must_equal 2
-      expect(r.body.scan(/"source"\s*:\s*"\${source}"/).size).must_equal 2
-      expect(r.body.scan(/"sourcetype"\s*:\s*"\${sourcetype}"/).size).must_equal 2
-    }
-  end
-
-  it "should support use a formatter" do
+  it "should support formatters" do
     verify_sent_events(<<~CONF) { |r|
       <format>
         @type single_value

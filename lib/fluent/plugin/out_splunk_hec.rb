@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "fluent/plugin/output"
 require "fluent/plugin/formatter_nil"
 
@@ -9,6 +11,10 @@ module Fluent::Plugin
   class SplunkHecOutput < Fluent::Plugin::Output
     Fluent::Plugin.register_output('splunk_hec', self)
 
+    JQ_PLACEHOLDER_PREFIX = '{%'
+    JQ_PLACEHOLDER_SUFFIX = '%}'
+    JQ_PLACEHOLDER = /#{JQ_PLACEHOLDER_PREFIX}.*?#{JQ_PLACEHOLDER_SUFFIX}/
+
     helpers :formatter
 
     autoload :VERSION, "fluent/plugin/out_splunk_hec/version"
@@ -18,7 +24,7 @@ module Fluent::Plugin
     There are four options:
     * `placeholder` - uses the placeholder expander comes with the fluentd built-in [`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer) filter plugin to support `${}` placeholders. Please check [the <record> directive document](https://docs.fluentd.org/v1.0/articles/filter_record_transformer#%3Crecord%3E-directive) for details.
     * `ruby` - works exactly the same way when `enable_ruby` is set to `true` in [`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer). Please read [the `enable_ruby` document]([`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer#enable_ruby) for details.
-    * `jq` - uses the fast (written in C) and powerful [jq engine](https://stedolan.github.io/jq/) to render the value. The following variables are available:
+    * `jq` - uses the fast (written in C) and powerful [jq engine](https://stedolan.github.io/jq/) to render the value. Jq filters should be wrapped inside `{% %}`, e.g. `{% .tag %}`. The following variables are available:
       - `.tag` refers to the whole tag.
       - `.record` refers to the whole record(event).
       - `.time` refers to stringanized event time.
@@ -158,20 +164,32 @@ module Fluent::Plugin
       @template_fields.each { |field|
 	v = instance_variable_get field
 	if v
-	  begin
-	    program = JQ::Core.new v
-	  rescue JQ::Error
-	    raise Fluent::ConfigError, "Invalid jq filter for #{field}: #{v}"
+	  programs = v.scan JQ_PLACEHOLDER
+	  if programs.empty?
+	    # just simply return the value if no jq program is in the value
+	    instance_variable_set field,  ->(tag, time, record) { v }
+	    next
 	  end
+
+	  programs = programs.map! { |p|
+	    begin
+	      JQ::Core.new p.delete_prefix!(JQ_PLACEHOLDER_PREFIX).delete_suffix!(JQ_PLACEHOLDER_SUFFIX)
+	    rescue JQ::Error
+	      raise Fluent::ConfigError, "Invalid jq filter for #{field}: #{p}"
+	    end
+	  }
 	  instance_variable_set field, ->(tag, time, record) {
-	    ''.tap do |ret|
-	      json = MultiJson.dump(
-		'tag'.freeze      => tag,
-		'time'.freeze     => Time.at(time).to_s,
-		'record'.freeze   => record,
-		'hostname'.freeze => @default_host
-	      )
-	      program.update(json, false) { |r| ret << MultiJson.load("[#{r}]").first }
+	    json = MultiJson.dump(
+	      'tag'.freeze      => tag,
+	      'time'.freeze     => Time.at(time).to_s,
+	      'record'.freeze   => record,
+	      'hostname'.freeze => @default_host
+	    )
+	    p = programs.each
+	    v.gsub JQ_PLACEHOLDER do |_|
+	      [].tap { |buf|
+		p.next.update(json, false) { |r| buf << MultiJson.load("[#{r}]").first }
+	      }.first
 	    end
 	  }
 	end
