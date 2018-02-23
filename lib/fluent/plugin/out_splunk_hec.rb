@@ -11,9 +11,7 @@ module Fluent::Plugin
   class SplunkHecOutput < Fluent::Plugin::Output
     Fluent::Plugin.register_output('splunk_hec', self)
 
-    JQ_PLACEHOLDER_PREFIX = '{%'
-    JQ_PLACEHOLDER_SUFFIX = '%}'
-    JQ_PLACEHOLDER = /#{JQ_PLACEHOLDER_PREFIX}.*?#{JQ_PLACEHOLDER_SUFFIX}/
+    JQ_PLACEHOLDER = /{%(.*?)%}/
 
     helpers :formatter
 
@@ -171,9 +169,9 @@ module Fluent::Plugin
 	    next
 	  end
 
-	  programs = programs.map! { |p|
+	  programs = programs.flatten!.map! { |p|
 	    begin
-	      JQ::Core.new p.delete_prefix!(JQ_PLACEHOLDER_PREFIX).delete_suffix!(JQ_PLACEHOLDER_SUFFIX)
+	      JQ::Core.new p
 	    rescue JQ::Error
 	      raise Fluent::ConfigError, "Invalid jq filter for #{field}: #{p}"
 	    end
