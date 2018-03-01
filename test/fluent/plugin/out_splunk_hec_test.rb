@@ -25,131 +25,187 @@ describe Fluent::Plugin::SplunkHecOutput do
   end
 
   it "should send request to Splunk" do
-    req = verify_sent_events { |r|
-      expect(r.body.scan(/test message/).size).must_equal 2
+    req = verify_sent_events { |batch|
+      expect(batch.size).must_equal 2
     }
     expect(req).must_be_requested times: 1
   end
 
-  it "should use event tags for source by default" do
-    verify_sent_events() { |r|
-      expect(r.body).must_match(/"source"\s*:\s*"tag.event1"/)
-      expect(r.body).must_match(/"source"\s*:\s*"tag.event2"/)
-    }
-  end
-
   it "should use host machine's hostname for event host by default" do
-    verify_sent_events() { |r|
-      expect(r.body).must_match(/"host"\s*:\s*"#{Socket.gethostname}"/)
+    verify_sent_events { |batch|
+      batch.each do |item|
+	expect(item['host']).must_equal Socket.gethostname
+      end
     }
   end
 
-  it "should not set sourcetype by default" do
-    verify_sent_events() { |r|
-      expect(r.body).wont_match(/"sourcetype"\s*:\s*"/)
-      true # `wont_match` returns `false` which will make webmock think it fails
+  %w[index source sourcetype].each do |field|
+    it "should not set #{field} by default" do
+      verify_sent_events { |batch|
+	batch.each do |item|
+	  expect(item).wont_include field
+	end
+      }
+    end
+  end
+
+  it "should support ${tag}" do
+    verify_sent_events(<<~CONF) { |batch|
+    index ${tag}
+    host ${tag}
+    source ${tag}
+    sourcetype ${tag}
+    CONF
+      batch.each do |item|
+	%w[index host source sourcetype].each { |field|
+	  expect(%w[tag.event1 tag.event2]).must_include item[field]
+	}
+      end
     }
   end
 
-  describe "templating" do
-    it "should support placeholder templates" do
-      verify_sent_events(<<~CONF) { |r|
-	index idx-${hostname}
-	host ${tag}
-        source ${tag_parts[0]}-${tag_parts[1]}
-	sourcetype ${record["id"]}_${time}
-      CONF
-	expect(r.body.scan(/"index"\s*:\s*"idx-#{Socket.gethostname}"/).size).must_equal 2
+  it "should support *_key" do
+    verify_sent_events(<<~CONF) { |batch|
+      index_key      level
+      host_key       from
+      source_key     file
+      sourcetype_key agent.name
+    CONF
+      batch.each { |item|
+	expect(item['index']).must_equal 'info'
+	expect(item['host']).must_equal 'my_machine'
+	expect(item['source']).must_equal 'cool.log'
+	expect(item['sourcetype']).must_equal 'test'
 
-	expect(r.body).must_match(/"host"\s*:\s*"tag.event1"/)
-	expect(r.body).must_match(/"host"\s*:\s*"tag.event2"/)
-
-	expect(r.body).must_match(/"source"\s*:\s*"tag-event1"/)
-	expect(r.body).must_match(/"source"\s*:\s*"tag-event2"/)
-
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"1st_#{Time.now.to_s.split(' ')[0]}/)
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"2nd_#{Time.now.to_s.split(' ')[0]}/)
+	JSON.load(item['event']).tap do |event|
+	  %w[level from file].each { |field| expect(event).wont_include field }
+	  expect(event['agent']).wont_include 'name'
+	end
       }
-    end
-
-    it "should support ruby templates" do
-      verify_sent_events(<<~CONF) { |r|
-	template_engine ruby
-	index idx-${hostname}
-	host ${"host-" + tag.split(".").last}
-	source ${tag_parts.join("-")}
-	sourcetype ${case record["id"] when '1st' then 'first' else 'second' end}_${time}
-      CONF
-	expect(r.body.scan(/"index"\s*:\s*"idx-#{Socket.gethostname}"/).size).must_equal 2
-
-	expect(r.body).must_match(/"host"\s*:\s*"host-event1"/)
-	expect(r.body).must_match(/"host"\s*:\s*"host-event2"/)
-
-	expect(r.body).must_match(/"source"\s*:\s*"tag-event1"/)
-	expect(r.body).must_match(/"source"\s*:\s*"tag-event2"/)
-
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"first_#{Time.now.to_s.split(' ')[0]}/)
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"second_#{Time.now.to_s.split(' ')[0]}/)
-      }
-    end
-
-    it "should support jq templates" do
-      verify_sent_events(<<~CONF) { |r|
-	template_engine jq
-	index idx-{% .hostname %}
-	host '{% "host-" + ( .tag | split(".") | .[-1] ) %}'
-	source '.tag'
-	sourcetype '{% .record.id %}_{% .time %}'
-      CONF
-	expect(r.body.scan(/"index"\s*:\s*"idx-#{Socket.gethostname}"/).size).must_equal 2
-
-	expect(r.body).must_match(/"host"\s*:\s*"host-event1"/)
-	expect(r.body).must_match(/"host"\s*:\s*"host-event2"/)
-
-	expect(r.body.scan(/"source"\s*:\s*"\.tag"/).size).must_equal 2
-
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"1st_#{Time.now.to_s.split(' ')[0]}/)
-	expect(r.body).must_match(/"sourcetype"\s*:\s*"2nd_#{Time.now.to_s.split(' ')[0]}/)
-      }
-    end
-
-    it "should be able to disable tempalte" do
-      verify_sent_events(<<~CONF) { |r|
-	template_engine none
-	index "${index}"
-	host "${hostname}"
-	source "${source}"
-	sourcetype "${sourcetype}"
-	CONF
-	expect(r.body.scan(/"index"\s*:\s*"\${index}"/).size).must_equal 2
-	expect(r.body.scan(/"host"\s*:\s*"\${hostname}"/).size).must_equal 2
-	expect(r.body.scan(/"source"\s*:\s*"\${source}"/).size).must_equal 2
-	expect(r.body.scan(/"sourcetype"\s*:\s*"\${sourcetype}"/).size).must_equal 2
-      }
-    end
+    }
   end
 
   it "should support formatters" do
-    verify_sent_events(<<~CONF) { |r|
+    verify_sent_events(<<~CONF) { |batch|
       <format>
         @type single_value
-	message_key message
+	message_key log
 	add_newline false
       </format>
     CONF
-      expect(r.body.scan(/"event"\s*:\s*"test message"/).size).must_equal 2
+      batch.map { |item| item['event'] }
+	   .each { |event| expect(event).must_equal "everything is good" }
     }
+  end
+
+  it "should support fields for indexed field extraction" do
+    d = verify_sent_events(<<~CONF) { |batch|
+    <fields>
+      from
+      logLevel level
+    </fields>
+    CONF
+      batch.each do |item|
+	JSON.load(item['event']).tap { |event|
+	  expect(event).wont_include 'from'
+	  expect(event).wont_include 'level'
+	}
+
+	expect(item['fields']['from']).must_equal 'my_machine'
+	expect(item['fields']['logLevel']).must_equal 'info'
+      end
+    }
+  end
+
+  describe 'metric'do
+    it 'should require metric_name_key and metric_value_key' do
+      expect{ create_output_driver('hec_host somehost', 'data_type metric') }.must_raise Fluent::ConfigError
+
+      expect{
+	create_output_driver('hec_host somehost', 'data_type metric', 'metric_name_key x')
+      }.must_raise Fluent::ConfigError
+
+      expect{
+	create_output_driver('hec_host somehost', 'data_type metric', 'metric_value_key x')
+      }.must_raise Fluent::ConfigError
+
+      expect(
+	create_output_driver('hec_host somehost', 'data_type metric', 'metric_name_key x', 'metric_value_key y')
+      ).wont_be_nil
+    end
+
+    it 'should have "metric" as event, and have proper fields' do
+      verify_sent_events(<<~CONF) { |batch|
+	data_type metric
+	metric_name_key from
+	metric_value_key value
+      CONF
+        batch.each do |item|
+	  expect(item['event']).must_equal 'metric'
+	  expect(item['fields']['metric_name']).must_equal 'my_machine'
+	  expect(item['fields']['_value']).must_equal 100
+	  expect(item['fields']['log']).must_equal 'everything is good'
+	  expect(item['fields']['level']).must_equal 'info'
+	  expect(item['fields']['file']).must_equal 'cool.log'
+	end
+      }
+    end
+
+    it 'should handle empty fields' do
+      verify_sent_events(<<~CONF) { |batch|
+	data_type metric
+	metric_name_key from
+	metric_value_key value
+	<fields>
+	</fields>
+      CONF
+        batch.each do |item|
+	  expect(item['fields'].keys.size).must_equal 2
+	end
+      }
+    end
+
+    it 'should handle custom fields' do
+      verify_sent_events(<<~CONF) { |batch|
+	data_type metric
+	metric_name_key from
+	metric_value_key value
+	<fields>
+	  level
+	  filePath file
+	</fields>
+      CONF
+        batch.each do |item|
+	  expect(item['fields'].keys.size).must_equal 4
+	  expect(item['fields']['level']).must_equal 'info'
+	  expect(item['fields']['filePath']).must_equal 'cool.log'
+	end
+      }
+    end
   end
 
   def verify_sent_events(conf = '', &blk)
     host = "hec.splunk.com"
     d = create_output_driver("hec_host #{host}", conf)
 
-    hec_req = stub_hec_request("https://#{host}:8088").with &blk
+    hec_req = stub_hec_request("https://#{host}:8088").with { |r|
+      blk.call r.body.split(/(?={)\s*(?<=})/).map { |item| JSON.load item }
+    }
 
     d.run do
-      d.feed("tag.event1", event_time, {"message" => "test message", "id" => "1st"})
-      d.feed("tag.event2", event_time, {"message" => "test message", "id" => "2nd"})
+      event = {
+	"log"   => "everything is good",
+	"level" => "info",
+	"from"  => "my_machine",
+	"file"  => "cool.log",
+	"value" => 100,
+	"agent" => {
+	  "name"    => "test",
+	  "version" => "1.0.0"
+	}
+      }
+      d.feed("tag.event1", event_time, {"id" => "1st"}.merge(Marshal.load(Marshal.dump(event))))
+      d.feed("tag.event2", event_time, {"id" => "2nd"}.merge(Marshal.load(Marshal.dump(event))))
     end
 
     hec_req

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "fluent/plugin/output"
-require "fluent/plugin/formatter_nil"
+require "fluent/plugin/formatter"
 
 require 'openssl'
 require 'multi_json'
@@ -11,26 +11,17 @@ module Fluent::Plugin
   class SplunkHecOutput < Fluent::Plugin::Output
     Fluent::Plugin.register_output('splunk_hec', self)
 
-    JQ_PLACEHOLDER = /{%(.*?)%}/
-
     helpers :formatter
 
     autoload :VERSION, "fluent/plugin/out_splunk_hec/version"
 
-    desc <<~DESC
-    Specify which template engine to use to parse config values which support templates.
-    There are four options:
-    * `placeholder` - uses the placeholder expander comes with the fluentd built-in [`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer) filter plugin to support `${}` placeholders. Please check [the <record> directive document](https://docs.fluentd.org/v1.0/articles/filter_record_transformer#%3Crecord%3E-directive) for details.
-    * `ruby` - works exactly the same way when `enable_ruby` is set to `true` in [`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer). Please read [the `enable_ruby` document]([`filter_record_transformer`](https://docs.fluentd.org/v1.0/articles/filter_record_transformer#enable_ruby) for details.
-    * `jq` - uses the fast (written in C) and powerful [jq engine](https://stedolan.github.io/jq/) to render the value. Jq filters should be wrapped inside `{% %}`, e.g. `{% .tag %}`. The following variables are available:
-      - `.tag` refers to the whole tag.
-      - `.record` refers to the whole record(event).
-      - `.time` refers to stringanized event time.
-      - `.hostname` refers to machine’s hostname. The actual value is result of Socket.gethostname.
-      If you have lots of events to handle, using `jq` is recommended. To use this engine, you need to install the `ruby-jq` rubygem on your machine first.
-    * `none` - do not use any tempalte engine. All config values will just remain as what they are configured in the config file.
-    DESC
-    config_param :template_engine, :enum, list: %i[placeholder ruby jq none], default: :placeholder
+    KEY_FIELDS = %w[index host source sourcetype metric_name metric_value].freeze
+    TAG_PLACEHOLDER = '${tag}'.freeze
+
+    MISSING_FIELD = Hash.new { |h, k|
+      $log.warn "expected field #{k} but it's missing" if defined?($log)
+      MISSING_FIELD
+    }.freeze
 
     desc 'Which protocol to use to call HEC api, "http" or "https", default "https".'
     config_param :protocol, :enum, list: %i[http https], default: :https
@@ -44,10 +35,10 @@ module Fluent::Plugin
     desc 'The HEC token.'
     config_param :hec_token, :string
 
-    desc "The path to a file containing a PEM-format CA certificate for this client."
+    desc 'The path to a file containing a PEM-format CA certificate for this client.'
     config_param :client_cert, :string, default: nil
 
-    desc "The private key for this client."
+    desc 'The private key for this client.'
     config_param :client_key, :string, default: nil
 
     desc 'The path to a file containing a PEM-format CA certificate.'
@@ -59,51 +50,87 @@ module Fluent::Plugin
     desc 'List of SSL ciphers allowed.'
     config_param :ssl_ciphers, :array, default: nil
 
-    desc "Indicates if insecure SSL connection is allowed."
+    desc 'Indicates if insecure SSL connection is allowed.'
     config_param :insecure_ssl, :bool, default: false
 
-    desc 'The Splunk index indexs events, by default it is not set, and will use what is configured in the HTTP input. Template is supported.'
+    desc 'Type of data sending to Splunk, `event` or `metric`. `metric` type is supported since Splunk 7.0. To use `metric` type, make sure the index is a metric index.'
+    config_param :data_type, :enum, list: %i[event metric], default: :event
+
+    desc 'The Splunk index to index events. When not set, will be decided by HEC. This is exclusive with `index_key`'
     config_param :index, :string, default: nil
 
-    desc "Set the host field for events, by default it's the hostname of the machine that runnning fluentd. Template is supported."
+    desc 'Field name to contain Splunk index name. This is exclusive with `index`.'
+    config_param :index_key, :string, default: nil
+
+    desc "Host for events, by default it uses the hostname of the machine that runnning fluentd. This is exclusive with `host_key`."
     config_param :host, :string, default: nil
 
-    desc "The source will be applied to the events, by default it uses the event's tag. Template is supported."
+    desc 'Field name to contain host. This is exclusive with `host`.'
+    config_param :host_key, :string, default: nil
+
+    desc 'Source for events, when not set, will be decided by HEC. This is exclusive with `source_key`.'
     config_param :source, :string, default: nil
 
-    desc 'The sourcetype will be applied to the events, by default it is not set, and leave it to Splunk to figure it out. Template is supported.'
+    desc 'Field name to contain source. This is exclusive with `source`.'
+    config_param :source_key, :string, default: nil
+
+    desc 'Sourcetype for events, when not set, will be decided by HEC. This is exclusive with `sourcetype_key`.'
     config_param :sourcetype, :string, default: nil
 
-    # Whether to allow non-UTF-8 characters in user logs. If set to true, any
-    # non-UTF-8 character would be replaced by the string specified by
-    # 'non_utf8_replacement_string'. If set to false, any non-UTF-8 character
-    # would trigger the plugin to error out.
-    config_param :coerce_to_utf8, :bool, :default => true
+    desc 'Field name to contain sourcetype. This is exclusive with `sourcetype`.'
+    config_param :sourcetype_key, :string, default: nil
 
-    # If 'coerce_to_utf8' is set to true, any non-UTF-8 character would be
-    # replaced by the string specified here.
-    config_param :non_utf8_replacement_string, :string, :default => ' '
+    desc "Field name to contain metric name, this is required when `data_type` is 'metric'. This is exclusive with `metric_name`."
+    config_param :metric_name_key, :string, default: nil
+
+    desc "Field name to contain metric value, this is required when `data_type` is 'metric'. This is exclusive with `metric_name`."
+    config_param :metric_value_key, :string, default: nil
+
+    desc 'When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, `metric_value_key` will not be removed from the original event.'
+    config_param :keep_keys, :bool, default: false
+
+    desc 'Define index-time fields for event data type, or metric dimensions for metric data type. '
+    config_section :fields, init: false, multi: false, required: false do
+      # this is blank on purpose
+    end
     
     config_section :format do
-      # the format section defined in formatter plugin help requires init.
-      # just defined a useless formatter as a placeholder.
-      config_param :@type, :string, default: 'nil'
+      config_set_default :@type, 'json'
+      config_set_default :add_newline, false
     end
+
+    desc <<~DESC
+    Whether to allow non-UTF-8 characters in user logs. If set to true, any
+    non-UTF-8 character would be replaced by the string specified by
+    `non_utf8_replacement_string`. If set to false, any non-UTF-8 character
+    would trigger the plugin to error out.
+    DESC
+    config_param :coerce_to_utf8, :bool, :default => true
+
+    desc <<~DESC
+    If `coerce_to_utf8` is set to true, any non-UTF-8 character would be
+    replaced by the string specified here.
+    DESC
+    config_param :non_utf8_replacement_string, :string, :default => ' '
 
     def initialize
       super
       @default_host = Socket.gethostname
       @chunk_queue = SizedQueue.new 1
-      @template_fields = %w[@index @host @source @sourcetype]
+      @extra_fields = nil
     end
 
     def configure(conf)
       super
-      prepare_templates
+
+      check_conflict
+      check_metric_requirements
       construct_api
+      prepare_key_fields
+      configure_fields
+      pick_custom_format_method
 
       @formatter = formatter_create
-      @formatter = nil if @formatter.is_a?(::Fluent::Plugin::NilFormatter)
     end
 
     def start
@@ -112,17 +139,7 @@ module Fluent::Plugin
     end
 
     def format(tag, time, record)
-      event = @formatter ? @formatter.format(tag, time, record) : record
-
-      MultiJson.dump({
-	host: @host ? @host.(tag, time, record) : @default_host,
-	source: @source ? @source.(tag, time, record) : tag,
-        event: convert_to_utf8(event),
-	time: time.to_i
-      }.tap { |payload|
-	payload.update sourcetype: @sourcetype.(tag, time, record) if @sourcetype
-	payload.update index: @index.(tag, time, record) if @index
-      })
+      # this method will be replaced in `configure`
     end
 
     def try_write(chunk)
@@ -141,95 +158,105 @@ module Fluent::Plugin
 
     private
 
-    def prepare_templates
-      case @template_engine
-      when :jq
-	use_jq_template
-      when :ruby, :placeholder
-	use_placeholder_template
-      else # none
-	use_none_template
-      end
+    def check_conflict
+      KEY_FIELDS.each { |f|
+	kf = "#{f}_key"
+	raise Fluent::ConfigError, "Can not set #{f} and #{kf} at the same time." \
+	  if %W[@#{f} @#{kf}].all? &method(:instance_variable_get)
+      }
     end
 
-    def use_jq_template
-      begin
-	require 'jq'
-      rescue LoadError
-	raise Fluent::ConfigError, "`template_engine` is set to `jq`, but `ruby-jq` is not installed. Run `gem install ruby-jq` to install it."
-      end
+    def check_metric_requirements
+      return unless @data_type == :metric
 
-      @template_fields.each { |field|
-	v = instance_variable_get field
+      %w[metric_name_key metric_value_key].each { |config|
+	raise Fluent::ConfigError, "#{config} is required when `data_type` is 'metric'." \
+	  unless instance_variable_get("@#{config}")
+      }
+    end
+
+    def prepare_key_fields
+      KEY_FIELDS.each { |f|
+	v = instance_variable_get "@#{f}_key"
 	if v
-	  programs = v.scan JQ_PLACEHOLDER
-	  if programs.empty?
-	    # just simply return the value if no jq program is in the value
-	    instance_variable_set field,  ->(tag, time, record) { v }
-	    next
+	  attrs = v.split('.').freeze
+	  if @keep_keys
+	    instance_variable_set "@#{f}", ->(_, record) { attrs.inject(record) { |o, k| o[k] } }
+	  else
+	    instance_variable_set "@#{f}", ->(_, record) {
+	      attrs[0...-1].inject(record) { |o, k| o[k] }.delete(attrs[-1])
+	    }
 	  end
-
-	  programs = programs.flatten!.map! { |p|
-	    begin
-	      JQ::Core.new p
-	    rescue JQ::Error
-	      raise Fluent::ConfigError, "Invalid jq filter for #{field}: #{p}"
-	    end
-	  }
-	  instance_variable_set field, ->(tag, time, record) {
-	    json = MultiJson.dump(
-	      'tag'.freeze      => tag,
-	      'time'.freeze     => Time.at(time).to_s,
-	      'record'.freeze   => record,
-	      'hostname'.freeze => @default_host
-	    )
-	    p = programs.each
-	    v.gsub JQ_PLACEHOLDER do |_|
-	      [].tap { |buf|
-		p.next.update(json, false) { |r| buf << MultiJson.load("[#{r}]").first }
-	      }.first
-	    end
-	  }
-	end
-      }
-    end
-
-    def use_placeholder_template
-      require 'fluent/plugin/filter_record_transformer'
-      expander =
-	if @template_engine == :ruby
-	  # require utilities which would be used in ruby placeholders
-	  require 'pathname'
-	  require 'uri'
-	  require 'cgi'
-	  Fluent::Plugin::RecordTransformerFilter::RubyPlaceholderExpander
 	else
-	  Fluent::Plugin::RecordTransformerFilter::PlaceholderExpander
-	end \
-	  .new(log: log, auth_typecast: true)
+	  v = instance_variable_get "@#{f}"
+	  next unless v
 
-      @template_fields.each { |field|
-	v = instance_variable_get field
-	if v
-	  v = expander.preprocess_map(v)
-	  instance_variable_set field, ->(tag, time, record) {
-	    expander.expand(v, expander.prepare_placeholders(
-	      'tag'.freeze       => tag,
-	      'tag_parts'.freeze => tag.split('.'),
-	      'time'.freeze      => expander.time_value(time),
-	      'hostname'.freeze  => @default_host,
-	      'record'.freeze    => record
-	    ))
-	  }
+	  if v == TAG_PLACEHOLDER
+	    instance_variable_set "@#{f}", ->(tag, _) { tag }
+	  else
+	    instance_variable_set "@#{f}", ->(_, _) { v }
+	  end
 	end
       }
     end
 
-    def use_none_template
-      @template_fields.each { |field|
-	v = instance_variable_get field
-	instance_variable_set field, ->(tag, time, record) { v } if v
-      }
+    # <fields> directive, which defines:
+    # * when data_type is event, index-time fields
+    # * when data_type is metric, metric dimensions
+    def configure_fields
+      return unless @fields
+
+      @extra_fields = @fields.corresponding_config_element.map { |k, v|
+	[k, v.empty? ? k : v]
+      }.to_h
+    end
+
+    def pick_custom_format_method
+      if @data_type == :event
+	define_singleton_method :format, method(:format_event)
+      else
+	define_singleton_method :format, method(:format_metric)
+      end
+    end
+
+    def format_event(tag, time, record)
+      MultiJson.dump({
+	host: @host ? @host.(tag, record) : @default_host,
+	time: time.to_i
+      }.tap { |payload|
+	payload[:index] = @index.(tag, record) if @index
+	payload[:source] = @source.(tag, record) if @source
+	payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
+	if @extra_fields
+	  payload[:fields] = @extra_fields.map { |name, field| [name, record[field]] }.to_h
+	  # if a field is already in indexed fields, then remove it from the original event
+	  @extra_fields.values.each { |field| record.delete field }
+	end
+	payload[:event] = convert_to_utf8 @formatter.format(tag, time, record)
+      })
+    end
+
+    def format_metric(tag, time, record)
+      MultiJson.dump({
+	host: @host ? @host.(tag, record) : @default_host,
+	time: time.to_i,
+	event: 'metric'
+      }.tap { |payload|
+	payload[:index] = @index.(tag, record) if @index
+	payload[:source] = @source.(tag, record) if @source
+	payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
+
+	fields = {
+	  metric_name: @metric_name.(tag, record),
+	  _value: @metric_value.(tag, record)
+	}
+       if @extra_fields
+	  fields.update @extra_fields.map { |name, field| [name, record[field]] }.to_h
+	else
+	  fields.update record
+	end
+	payload[:fields] = convert_to_utf8 fields
+      })
     end
 
     def construct_api

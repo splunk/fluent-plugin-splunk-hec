@@ -37,8 +37,6 @@ GEM
     power_assert (1.1.1)
     public_suffix (3.0.2)
     rake (10.5.0)
-    ruby-jq (0.1.7)
-      multi_json
     safe_yaml (1.0.4)
     serverengine (2.0.6)
       sigdump (~> 0.2.2)
@@ -65,7 +63,6 @@ DEPENDENCIES
   fluent-plugin-splunk-hec!
   minitest (~> 5.0)
   rake (~> 10.0)
-  ruby-jq (~> 0.1)
   test-unit (~> 3.0)
   webmock (~> 3.2)
 
