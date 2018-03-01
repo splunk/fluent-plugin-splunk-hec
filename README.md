@@ -1,6 +1,6 @@
 # fluent-plugin-splunk-hec
 
-[Fluentd](https://fluentd.org/) output plugin to send events to [Splunk](https://www.splunk.com) over the HEC (HTTP Event Collector) API.
+[Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) over the HEC (HTTP Event Collector) API.
 
 ## Installation
 
@@ -28,9 +28,91 @@ $ bundle
 
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
 
-### protocol (enum) (optional)
+### Examples
 
-Which protocol to use to call HEC api, "http" or "https", default "https".
+#### Example 1: Minimum Configs
+
+```
+<match **>
+  @type splunk_hec
+  hec_host 12.34.56.78
+  hec_port 8088
+  hec_token 00000000-0000-0000-0000-000000000000
+</match>
+```
+
+This example is very basic, it just tells the plugin to send events to Splunk HEC on `https://12.34.56.78:8088` (https is the default protocol), using the HEC token `00000000-0000-0000-0000-000000000000`. It will use whatever index, source, sourcetype are configured in HEC. And the `host` of each event is the hostname of the machine which running fluentd.
+
+#### Example 2: Overwrite HEC defaults
+
+```
+<match **>
+  @type splunk_hec
+  hec_host 12.34.56.78
+  hec_port 8088
+  hec_token 00000000-0000-0000-0000-000000000000
+
+  index awesome
+  source ${tag}
+  sourcetype _json
+</match>
+```
+
+This configuration will
+* send all events to the `awesome` index, and
+* set their source to the event tags. `${tag}` is a special value which will be replaced by the event tags, and
+* set their sourcetype to `_json`.
+
+Sometimes you want to use the values from the input event for these parameters, this is where the `*_key` parameters help.
+
+```
+<match **>
+  ...omitting other parameters...
+
+  source_key file_path
+</match>
+```
+
+In the second example (in order to keep it concise, we just omitted the repeating parameters, and we will keep doing so in the following examples), it uses the `source_key` config to set the source of event to the value of the event's `file_path` field. Given an input event like
+```javascript
+{"file_path": "/var/log/splunk.log", "message": "This is an exmaple.", "level": "info"}
+```
+Then the source for this event will be "/var/log/splunk.log". And the "file\_path" field will be removed from the input event, so what you will eventually get ingested in Splunk is
+```javascript
+{"message": "This is an exmaple.", "level": "info"}
+```
+If you want to keep "file\_path" in the event, you can use `keep_keys`.
+
+Besides `source_key` there are also other `*_key` parameters, check the parameters details below.
+
+#### Example 3: Sending metrics
+
+[Metrics](https://docs.splunk.com/Documentation/Splunk/latest/Metrics/Overview) is avaialble since Splunk 7.0.0, you can use this output plugin to send events as metrics to a Splunk metric index by setting `data_type` to "metric".
+
+```
+<match **>
+  @type splunk_hec
+  data_type metric
+  hec_host 12.34.56.78
+  hec_port 8088
+  hec_token 00000000-0000-0000-0000-000000000000
+
+  metric_name_key name
+  metric_value_key value
+</match>
+```
+
+`metric_name_key` and `metric_value_key` are required for metric, they indicate the fields for the name and the value for the metric respectively. As the other `*_key` parameters do, those fields will be removed from the input. And the rest of the input will be used as dimensions for the metric.
+
+### Parameters
+
+#### @type
+
+This value must be `splunk_hec`.
+
+#### protocol (enum) (optional)
+
+Protocol to use to call HEC API.
 
 Available values: http, https
 
@@ -38,11 +120,11 @@ Default value: `https`.
 
 ### hec_host (string) (required)
 
-The hostname/IP of the Splunk instance which has HTTP input enabled, or a HEC load balancer.
+The hostname/IP to HEC, or HEC load balancer.
 
 ### hec_port (integer) (optional)
 
-The port number of the HTTP input, or the HEC load balancer.
+The port number to HEC, or HEC load balancer.
 
 Default value: `8088`.
 
@@ -52,69 +134,181 @@ The HEC token.
 
 ### index (string) (optional)
 
-The Splunk index indexs events, by default it is not set, and will use what is configured in the HTTP input. Liquid template is supported.
+The Splunk index to index events. When not set, will be decided by HEC. This is exclusive with `index_key`.
+
+### index_key (string) (optional)
+
+Field name to contain Splunk index name. This is exclusive with `index`.
 
 ### host (string) (optional)
 
-Set the host field for events, by default it's the hostname of the machine that runnning fluentd. Liquid template is supported.
+The host field for events. This is exclusive with `host_key`.
+
+Default value: the hostname of the host machine.
+
+### host_key (string) (optional)
+
+Field name to contain host. This is exclusive with `host`.
 
 ### source (string) (optional)
 
-The source will be applied to the events, by default it uses the event's tag. Liquid template is supported.
+The source field for events, when not set, will be decided by HEC. This is exclusive with `source_key`.
+
+### source_key (string) (optional)
+
+Field name to contain source. This is exclusive with `source`.
 
 ### sourcetype (string) (optional)
 
-The sourcetype will be applied to the events, by default it is not set, and leave it to Splunk to figure it out. Liquid template is supported.
+The sourcetype field for events, when not set, will be decided by HEC. This is exclusive with `sourcetype_key`.
 
-### disable_template (bool) (optional)
+### sourcetype_key (string) (optional)
 
-Disable Liquid template support. Once disabled, it cannot use Liquid templates in the `host`, `index`, `source`, `sourcetype` fields.
+Field name to contain sourcetype. This is exclusive with `sourcetype`.
+
+### metric_name_key (string) (required for metric)
+
+Field name to contain metric name, this is required when `data_type` is 'metric'.
+
+### metric_value_key (string) (required for metric)
+
+Field name to contain metric value, this is required when `data_type` is 'metric'.
+
+### keep_keys (bool) (optional)
+
+By default, all the fields used by the `*_key` parameters will be removed from the original input events. To change this behavior, set this parameter to `true`.
+
+Default value: `true`.
 
 ### coerce_to_utf8 (bool) (optional)
 
-
+Whether to allow non-UTF-8 characters in user logs. If set to true, any non-UTF-8 character would be replaced by the string specified by `non_utf8_replacement_string`. If set to false, any non-UTF-8 character would trigger the plugin to error out.
 
 Default value: `true`.
 
 ### non_utf8_replacement_string (string) (optional)
 
+If `coerce_to_utf8` is set to true, any non-UTF-8 character would be replaced by the string specified here.
 
+Default value: `' '`.
 
-Default value: ` `.
+### &lt;fields&gt; section (optional) (single)
 
+Depending on the value of `data_type` parameter, the parameters inside `<fields>` section have different meanings. Despite the meaning, the syntax for parameters is unique.
 
-### \<ssl\> section (optional) (single)
+#### When `data_type` is `event`
 
-#### client_cert (string) (optional)
+In this case, parameters inside `<fields>` will be used as indexed fields. And these fields will be removed from the original input events. Please see the "Add a "fields" property at the top JSON level" [here](http://dev.splunk.com/view/event-collector/SP-CAAAFB6) for details. Given we have configuration like
 
-The path to a file containing a PEM-format CA certificate for this client.
+```
+<match **>
+  @type splunk_hec
+  ...omitting other parameters...
 
-#### ca_file (string) (optional)
+  <fields>
+    file
+    level
+    app applicatioin
+  </fields>
+</match>
+```
 
-The path to a file containing a PEM-format CA certificate.
+and an input event like
 
-#### ca_path (string) (optional)
+```javascript
+{"application": "webServer", "file": "server.rb", "lineNo": 100, "level": "info", "message": "Request finished in 30ms."}
+```
 
-The path to a directory containing CA certificates in PEM format.
+Then the HEC request JSON payload will be:
 
-#### ciphers (array) (optional)
+```javascript
+{
+   // omitting other fields
+   // ...
+   "event": "{\"lineNo\": 100, \"message\": \"Request finished in 30ms.\"}",
+   "fields": {
+     "file": "server.rb",
+     "level": "info",
+     "app": "webServer"
+   }
+}
+```
 
-List of SSl ciphers allowed.
+As you can see, parameters inside `<fields>` section can be a key-value pair or just a key (a name).
+If a parameter is a key-value, the key will be the name of the field inside the `"fields"` JSON object,
+whereas the value is the field name of the input event. So a key-value pair is a rename.
 
-#### client_pkey (string) (optional)
+If a parameter has just a key, it means its value is exactly the same as the key.
 
-The client's SSL private key.
+#### When `data_type` is `metric`
 
-#### insecure (bool) (optional)
+For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` is not presented, the original input event will be used as dimensions. If an empty `<fields></fields>` is presented, no dimension will be sent. For example, given configuration like
 
-If `insecure` is set to true, it will not verify the server's certificate. If `ca_file` or `ca_path` is set, `insecure` will be ignored.
+```
+<match **>
+  @type splunk_hec
+  data_type metric
+  ...omitting other parameters...
 
+  metric_name_key name
+  metric_value_key value
+  <fields>
+    file
+    level
+    app applicatioin
+  </fields>
+</match>
+```
 
+and an input event like
 
-### \<format\> section (optional) (single)
+```javascript
+{"application": "webServer", "file": "server.rb", "value": 100, "status": "OK", "message": "Normal", "name": "CPU Usage"}
+```
+
+Then, a metric of "CPU Usage" with value=100, along with 3 dimensions file="server.rb", status="OK", and app="webServer" will be sent to Splunk.
+
+### &lt;format&gt; section (optional) (single)
+
+The `<format>` section let's define which formatter to use to format events.
+By default, it uses [the `json` formatter](https://docs.fluentd.org/v1.0/articles/formatter_jso://docs.fluentd.org/v1.0/articles/formatter_json).
+
+Besides the `@type` parameter, you should define all other parameters for the formatter inside this section.
 
 #### @type (string) (required)
 
+Defines which formatter to use.
+
+### SSL parameters
+
+There are quite some parameters you can use to configure SSL (for HTTPS protocol).
+All these parameters are optional.
+
+#### client_cert (string)
+
+The path to a file containing a PEM-format CA certificate for this client.
+
+#### client_key (string)
+
+The private key for this client.
+
+#### ca_file (string)
+
+The path to a file containing a PEM-format CA certificate.
+
+#### ca_path (string)
+
+The path to a directory containing CA certificates in PEM format.
+
+#### ciphers (array)
+
+List of SSl ciphers allowed.
+
+#### insecure_ssl (bool)
+
+Indicates if insecure SSL connection is allowed, i.e. do not verify the server's certificate.
+
+Default value: `false`.
 
 ## Copyright
 

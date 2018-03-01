@@ -23,13 +23,13 @@ module Fluent::Plugin
       MISSING_FIELD
     }.freeze
 
-    desc 'Which protocol to use to call HEC api, "http" or "https", default "https".'
+    desc 'Protocol to use to call HEC API.'
     config_param :protocol, :enum, list: %i[http https], default: :https
 
-    desc 'The hostname/IP of the Splunk instance which has HTTP input enabled, or a HEC load balancer.'
+    desc 'The hostname/IP to HEC, or HEC load balancer.'
     config_param :hec_host, :string
 
-    desc 'The port number of the HTTP input, or the HEC load balancer.'
+    desc 'The port number to HEC, or HEC load balancer.'
     config_param :hec_port, :integer, default: 8088
 
     desc 'The HEC token.'
@@ -62,28 +62,28 @@ module Fluent::Plugin
     desc 'Field name to contain Splunk index name. This is exclusive with `index`.'
     config_param :index_key, :string, default: nil
 
-    desc "Host for events, by default it uses the hostname of the machine that runnning fluentd. This is exclusive with `host_key`."
+    desc "The host field for events, by default it uses the hostname of the machine that runnning fluentd. This is exclusive with `host_key`."
     config_param :host, :string, default: nil
 
     desc 'Field name to contain host. This is exclusive with `host`.'
     config_param :host_key, :string, default: nil
 
-    desc 'Source for events, when not set, will be decided by HEC. This is exclusive with `source_key`.'
+    desc 'The source field for events, when not set, will be decided by HEC. This is exclusive with `source_key`.'
     config_param :source, :string, default: nil
 
     desc 'Field name to contain source. This is exclusive with `source`.'
     config_param :source_key, :string, default: nil
 
-    desc 'Sourcetype for events, when not set, will be decided by HEC. This is exclusive with `sourcetype_key`.'
+    desc 'The sourcetype field for events, when not set, will be decided by HEC. This is exclusive with `sourcetype_key`.'
     config_param :sourcetype, :string, default: nil
 
     desc 'Field name to contain sourcetype. This is exclusive with `sourcetype`.'
     config_param :sourcetype_key, :string, default: nil
 
-    desc "Field name to contain metric name, this is required when `data_type` is 'metric'. This is exclusive with `metric_name`."
+    desc "Field name to contain metric name, this is required when `data_type` is 'metric'."
     config_param :metric_name_key, :string, default: nil
 
-    desc "Field name to contain metric value, this is required when `data_type` is 'metric'. This is exclusive with `metric_name`."
+    desc "Field name to contain metric value, this is required when `data_type` is 'metric'."
     config_param :metric_value_key, :string, default: nil
 
     desc 'When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, `metric_value_key` will not be removed from the original event.'
