@@ -85,6 +85,22 @@ describe Fluent::Plugin::SplunkHecOutput do
     }
   end
 
+  it "should remove nil fileds." do
+    verify_sent_events(<<~CONF) { |batch|
+      index_key      nonexist
+      host_key       nonexist
+      source_key     nonexist
+      sourcetype_key nonexist
+    CONF
+      batch.each { |item|
+	expect(item).wont_be :has_key?, 'index'
+	expect(item).wont_be :has_key?, 'host'
+	expect(item).wont_be :has_key?, 'source'
+	expect(item).wont_be :has_key?, 'sourcetype'
+      }
+    }
+  end
+
   it "should support formatters" do
     verify_sent_events(<<~CONF) { |batch|
       <format>

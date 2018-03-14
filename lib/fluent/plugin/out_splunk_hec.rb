@@ -227,6 +227,10 @@ module Fluent::Plugin
 	payload[:index] = @index.(tag, record) if @index
 	payload[:source] = @source.(tag, record) if @source
 	payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
+
+	# delete nil fields otherwise will get formet error from HEC
+	%i[host index source sourcetype].each { |f| payload.delete f if payload[f].nil? }
+
 	if @extra_fields
 	  payload[:fields] = @extra_fields.map { |name, field| [name, record[field]] }.to_h
 	  # if a field is already in indexed fields, then remove it from the original event
