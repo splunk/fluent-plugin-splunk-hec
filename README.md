@@ -268,12 +268,34 @@ and an input event like
 
 Then, a metric of "CPU Usage" with value=100, along with 3 dimensions file="server.rb", status="OK", and app="webServer" will be sent to Splunk.
 
-### &lt;format&gt; section (optional) (single)
+### &lt;format&gt; section (optional) (multiple)
 
-The `<format>` section let's define which formatter to use to format events.
+The `<format>` section let us define which formatter to use to format events.
 By default, it uses [the `json` formatter](https://docs.fluentd.org/v1.0/articles/formatter_jso://docs.fluentd.org/v1.0/articles/formatter_json).
 
 Besides the `@type` parameter, you should define all other parameters for the formatter inside this section.
+
+Multiple `<format>` sections can be defined to use different formatters for different tags. Each `<format>` section accepts an argument just like the `<match>` section does, to define tag matching. But default, every event will be formatted with `json`. For example:
+
+```
+<match **>
+  @type splunk_hec
+  ...
+
+  <format sometag.**>
+    @type single_value
+    message_key log
+  </format>
+
+  <format some.othertag>
+    @type csv
+    fields ["some", "fields"]
+  </format>
+```
+
+In this example, it will format events with tags which start with `sometag.` with the `single_value` formatter, and format events with tags `some.othertag` with the `csv` formatter, and format all other events with the `json` formatter (the default formatter).
+
+If you want to use a different default formatter, you can add a `<format **>` (or `<format>`) section.
 
 #### @type (string) (required)
 

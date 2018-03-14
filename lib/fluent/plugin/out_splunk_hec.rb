@@ -14,6 +14,7 @@ module Fluent::Plugin
     helpers :formatter
 
     autoload :VERSION, "fluent/plugin/out_splunk_hec/version"
+    autoload :MatchFormatter, "fluent/plugin/out_splunk_hec/match_formatter"
 
     KEY_FIELDS = %w[index host source sourcetype metric_name metric_value].freeze
     TAG_PLACEHOLDER = '${tag}'.freeze
@@ -95,6 +96,7 @@ module Fluent::Plugin
     end
     
     config_section :format do
+      config_set_default :usage, '**'
       config_set_default :@type, 'json'
       config_set_default :add_newline, false
     end
@@ -130,7 +132,10 @@ module Fluent::Plugin
       configure_fields
       pick_custom_format_method
 
-      @formatter = formatter_create
+      # @formatter_configs is from formatter helper
+      @formatters = @formatter_configs.map { |section|
+	MatchFormatter.new section.usage, formatter_create(usage: section.usage)
+      }
     end
 
     def start
@@ -236,7 +241,10 @@ module Fluent::Plugin
 	  # if a field is already in indexed fields, then remove it from the original event
 	  @extra_fields.values.each { |field| record.delete field }
 	end
-	payload[:event] = convert_to_utf8 @formatter.format(tag, time, record)
+	if formatter = @formatters.find { |f| f.match? tag }
+	  record = formatter.format(tag, time, record)
+	end
+	payload[:event] = convert_to_utf8 record
       })
     end
 

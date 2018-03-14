@@ -101,17 +101,33 @@ describe Fluent::Plugin::SplunkHecOutput do
     }
   end
 
-  it "should support formatters" do
-    verify_sent_events(<<~CONF) { |batch|
-      <format>
-        @type single_value
-	message_key log
-	add_newline false
-      </format>
-    CONF
-      batch.map { |item| item['event'] }
-	   .each { |event| expect(event).must_equal "everything is good" }
-    }
+  describe 'formatter' do
+    it "should support replace the default json formater" do
+      verify_sent_events(<<~CONF) { |batch|
+	<format>
+	  @type single_value
+	  message_key log
+	  add_newline false
+	</format>
+      CONF
+	batch.map { |item| item['event'] }
+	     .each { |event| expect(event).must_equal "everything is good" }
+      }
+    end
+
+    it "should support multiple formatters" do
+      verify_sent_events(<<~CONF) { |batch|
+	source ${tag}
+	<format tag.event1>
+	  @type single_value
+	  message_key log
+	  add_newline false
+	</format>
+      CONF
+	expect(batch.find { |item| item['source'] == 'tag.event1' }['event']).must_equal "everything is good"
+	expect(batch.find { |item| item['source'] == 'tag.event2' }['event']).must_be_instance_of Hash
+      }
+    end
   end
 
   it "should support fields for indexed field extraction" do
