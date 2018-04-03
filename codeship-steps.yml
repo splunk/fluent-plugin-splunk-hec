@@ -4,9 +4,9 @@
   steps:
   - command: echo Build complete
 
-# Push images tagged with the branch name
-- type: serial
+# Run unit tests against different rvm versions
+- type: parallel
   services:
-  - integrationtester
+  - unittests
   steps:
   - command: rake test

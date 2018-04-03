@@ -4,9 +4,12 @@ builder:
     dockerfile_path: Dockerfile
   cached: false
 
-integrationtester:
+unittests:
   build:
     image: splunk/fluent-plugin-splunk-hec
     dockerfile_path: Dockerfile
   volumes_from:
     - builder
+
+
+#publish
