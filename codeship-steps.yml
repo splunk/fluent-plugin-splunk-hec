@@ -1,14 +1,12 @@
-- type: parallel
+- type: serial
   services:
-  - app
+  - builder
   steps:
   - command: echo Build complete
 
 # Push images tagged with the branch name
-- type: parallel
+- type: serial
+  services:
+  - integrationtester
   steps:
-  - type: push
-    service: app
-    image_name:  splunk/fluent-plugin-splunk-hec
-    image_tag: "{{.Branch}}"
-
+  - command: rake

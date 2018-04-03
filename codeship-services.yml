@@ -1,5 +1,12 @@
-app:
+builder:
   build:
-    image: app
+    image: splunk/fluent-plugin-splunk-hec
     dockerfile_path: Dockerfile
   cached: false
+
+integrationtester:
+  build:
+    image: splunk/fluent-plugin-splunk-hec
+    dockerfile_path: Dockerfile
+  volumes_from:
+    - builder
