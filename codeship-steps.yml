@@ -1,0 +1,14 @@
+- type: parallel
+  services:
+  - app
+  steps:
+  - command: echo Build complete
+
+# Push images tagged with the branch name
+- type: parallel
+  steps:
+  - type: push
+    service: app
+    image_name:  splunk/fluent-plugin-splunk-hec
+    image_tag: "{{.Branch}}"
+
