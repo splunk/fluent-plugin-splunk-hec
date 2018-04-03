@@ -9,4 +9,4 @@
   services:
   - integrationtester
   steps:
-  - command: rake
+  - command: rake test
