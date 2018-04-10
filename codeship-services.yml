@@ -11,5 +11,19 @@ unittests:
   volumes_from:
     - builder
 
+awsdeployment:
+  image: codeship/aws-deployment
+  encrypted_env_file: aws-deployment.env.encrypted
+  environment:
+    - AWS_DEFAULT_REGION=us-east-1
+  volumes:
+    - ./:/deploy
 
-#publish
+splunk-hec:
+  build:
+    image: splunkhec
+    dockerfile_path: Dockerfile.Splunk
+  hostname: splunk-hec
+  environment:
+  - SPLUNK_START_ARGS=--accept-license
+  - SPLUNK_USER=root

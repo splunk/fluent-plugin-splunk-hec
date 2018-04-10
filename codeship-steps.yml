@@ -1,12 +1,14 @@
-- type: serial
+- type: parallel
   services:
   - builder
+  - unittests
   steps:
   - command: echo Build complete
 
-# Run unit tests against different rvm versions
 - type: parallel
   services:
-  - unittests
+  - splunkImage
   steps:
-  - command: rake test
+  - command: echo Deployed Splunk-hec
+
+
