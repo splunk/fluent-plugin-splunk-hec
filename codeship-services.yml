@@ -19,11 +19,11 @@ awsdeployment:
   volumes:
     - ./:/deploy
 
-splunk-hec:
+splunkImage:
   build:
-    image: splunkhec
+    image: splunkImage
     dockerfile_path: Dockerfile.Splunk
-  hostname: splunk-hec
+  hostname: splunk
   environment:
   - SPLUNK_START_ARGS=--accept-license
   - SPLUNK_USER=root
