@@ -5,9 +5,9 @@ Gem::Specification.new do |spec|
   spec.email         = ["zliang@splunk.com"]
 
   spec.summary       = %q{A fluentd output plugin writes events to Splunk via HEC.}
-  spec.description   = %q{A fluentd output plugin writes events to Splunk via HEC.}
+  spec.description   = %q{A fluentd output plugin created by Splunk that writes events to splunk indexers via HTTP Event Collector API.}
   spec.homepage      = "https://github.com/splunk/fluent-plugin-splunk-hec"
-  spec.license       = "SPLUNK PRE-RELEASE SOFTWARE LICENSE AGREEMENT"
+  spec.license       = "Nonstandard"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
