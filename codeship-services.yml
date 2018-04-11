@@ -19,9 +19,9 @@ awsdeployment:
   volumes:
     - ./:/deploy
 
-splunkImage:
+deploysplunk:
   build:
-    image: splunkImage
+    image: splunkimage
     dockerfile_path: Dockerfile.Splunk
   hostname: splunk
   environment:

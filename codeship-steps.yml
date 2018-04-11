@@ -7,8 +7,8 @@
 
 - type: parallel
   services:
-  - splunkImage
+  - deploysplunk
   steps:
-  - command: echo Deployed Splunk-hec
+  - command: echo Deployed Splunk!
 
 
