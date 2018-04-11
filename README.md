@@ -368,4 +368,4 @@ Default value: `false`.
 
 * Copyright(c) 2018- Gimi Liang @ Splunk Inc.
 * License
-  * Apache License, Version 2.0
+  * [SPLUNK PRE-RELEASE SOFTWARE LICENSE AGREEMENT](https://www.splunk.com/en_us/legal/splunk-pre-release-software-license-agreement.html)
