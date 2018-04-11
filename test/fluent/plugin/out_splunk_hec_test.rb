@@ -150,15 +150,17 @@ describe Fluent::Plugin::SplunkHecOutput do
   end
 
   describe 'metric'do
-    it 'should require metric_name_key and metric_value_key' do
-      expect{ create_output_driver('hec_host somehost', 'data_type metric') }.must_raise Fluent::ConfigError
+    it 'should check related configs' do
+      expect(
+	create_output_driver('hec_host somehost', 'data_type metric')
+      ).wont_be_nil
 
       expect{
-	create_output_driver('hec_host somehost', 'data_type metric', 'metric_name_key x')
+	create_output_driver('hec_host somehost', 'data_type metric', 'metrics_from_event false')
       }.must_raise Fluent::ConfigError
 
       expect{
-	create_output_driver('hec_host somehost', 'data_type metric', 'metric_value_key x')
+	create_output_driver('hec_host somehost', 'data_type metric', 'metric_name_key x')
       }.must_raise Fluent::ConfigError
 
       expect(
@@ -214,9 +216,19 @@ describe Fluent::Plugin::SplunkHecOutput do
 	end
       }
     end
+
+    it 'should treat each key-value in event as a metric' do
+      metrics = [
+	['tag', event_time, {'cup': 0.5, 'memory': 100}],
+	['tag', event_time, {'cup': 0.6, 'memory': 200}]
+      ]
+      with_stub_hec(events: metrics, conf: 'data_type metric') { |batch|
+	expect(batch.size).must_equal 4
+      }
+    end
   end
 
-  def verify_sent_events(conf = '', &blk)
+  def with_stub_hec(events:, conf: '', &blk)
     host = "hec.splunk.com"
     d = create_output_driver("hec_host #{host}", conf)
 
@@ -225,21 +237,29 @@ describe Fluent::Plugin::SplunkHecOutput do
     }
 
     d.run do
-      event = {
-	"log"   => "everything is good",
-	"level" => "info",
-	"from"  => "my_machine",
-	"file"  => "cool.log",
-	"value" => 100,
-	"agent" => {
-	  "name"    => "test",
-	  "version" => "1.0.0"
-	}
-      }
-      d.feed("tag.event1", event_time, {"id" => "1st"}.merge(Marshal.load(Marshal.dump(event))))
-      d.feed("tag.event2", event_time, {"id" => "2nd"}.merge(Marshal.load(Marshal.dump(event))))
+      events.each { |evt| d.feed *evt }
     end
 
     hec_req
+  end
+
+  def verify_sent_events(conf = '', &blk)
+    event = {
+      "log"   => "everything is good",
+      "level" => "info",
+      "from"  => "my_machine",
+      "file"  => "cool.log",
+      "value" => 100,
+      "agent" => {
+	"name"    => "test",
+	"version" => "1.0.0"
+      }
+    }
+    events = [
+      ["tag.event1", event_time, {"id" => "1st"}.merge(Marshal.load(Marshal.dump(event)))],
+      ["tag.event2", event_time, {"id" => "2nd"}.merge(Marshal.load(Marshal.dump(event)))]
+    ]
+
+    with_stub_hec conf: conf, events: events, &blk
   end
 end
