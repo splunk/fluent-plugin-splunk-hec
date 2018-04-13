@@ -96,13 +96,39 @@ Besides `source_key` there are also other `*_key` parameters, check the paramete
   hec_host 12.34.56.78
   hec_port 8088
   hec_token 00000000-0000-0000-0000-000000000000
+</match>
+```
 
-  metric_name_key name
+With this configuration, the plugin will treat each input event as a collection of metrics, i.e. each key-varlue pair in the event is a metric name-value pair. For example, given an input event like
+
+```javascript
+{"cpu/usage": 0.5, "cpu/rate": 10, "memory/usage": 100, "memory/rss": 90}
+```
+
+then 4 metrics will be sent to splunk.
+
+If the input events are not like this, instead they have the metric name and metric value as properties of the event. Then you can use `metric_name_key` and `metric_value_key`. Given an input event like
+
+```javascript
+{"metric": "cpu/usage", "value": 0.5, "app": "web_ui"}
+```
+
+You should change the configuration to
+
+```
+<match **>
+  @type splunk_hec
+  data_type metric
+  hec_host 12.34.56.78
+  hec_port 8088
+  hec_token 00000000-0000-0000-0000-000000000000
+
+  metric_name_key metric
   metric_value_key value
 </match>
 ```
 
-`metric_name_key` and `metric_value_key` are required for metric, they indicate the fields for the name and the value for the metric respectively. As the other `*_key` parameters do, those fields will be removed from the input. And the rest of the input will be used as dimensions for the metric.
+All other properties of the input (in this example, "app"), will be sent as dimensions of the metric. You can use the `<fields>` section to customize the dimensions.
 
 ### Parameters
 
@@ -166,13 +192,19 @@ The sourcetype field for events, when not set, will be decided by HEC. This is e
 
 Field name to contain sourcetype. This is exclusive with `sourcetype`.
 
-### metric_name_key (string) (required for metric)
+### metrics_from_event (bool) (optional)
 
-Field name to contain metric name, this is required when `data_type` is 'metric'.
+When `data_type` is set to "metric", by default it will treat every key-value pair in the input event as a metric name-value pair. Set `metrics_from_event` to `false` to disable this behavior and use `metric_name_key` and `metric_value_key` to define metrics.
 
-### metric_value_key (string) (required for metric)
+Default value: `true`.
 
-Field name to contain metric value, this is required when `data_type` is 'metric'.
+### metric_name_key (string) (optional)
+
+Field name to contain metric name. This is exclusive with `metrics_from_event`, when this is set, `metrics_from_event` will be set to `false`.
+
+### metric_value_key (string) (optional)
+
+Field name to contain metric value, this is required when `metric_name_key` is set.
 
 ### keep_keys (bool) (optional)
 
@@ -336,4 +368,4 @@ Default value: `false`.
 
 * Copyright(c) 2018- Gimi Liang @ Splunk Inc.
 * License
-  * Apache License, Version 2.0
+  * [SPLUNK PRE-RELEASE SOFTWARE LICENSE AGREEMENT](https://www.splunk.com/en_us/legal/splunk-pre-release-software-license-agreement.html)

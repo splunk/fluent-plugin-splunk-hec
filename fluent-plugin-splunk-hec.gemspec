@@ -5,9 +5,9 @@ Gem::Specification.new do |spec|
   spec.email         = ["zliang@splunk.com"]
 
   spec.summary       = %q{A fluentd output plugin writes events to Splunk via HEC.}
-  spec.description   = %q{A fluentd output plugin writes events to Splunk via HEC.}
+  spec.description   = %q{A fluentd output plugin created by Splunk that writes events to splunk indexers via HTTP Event Collector API.}
   spec.homepage      = "https://github.com/splunk/fluent-plugin-splunk-hec"
-  spec.license       = "Apache-2.0"
+  spec.license       = "Nonstandard"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.test_files    = Dir.glob('test/**/**.rb')
   spec.files         = %w[
-    CODE_OF_CONDUCT.md README.md LICENSE.txt
+    CODE_OF_CONDUCT.md README.md LICENSE.md
     fluent-plugin-splunk-hec.gemspec
     Gemfile Gemfile.lock
     Rakefile VERSION

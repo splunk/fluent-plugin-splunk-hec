@@ -81,10 +81,13 @@ module Fluent::Plugin
     desc 'Field name to contain sourcetype. This is exclusive with `sourcetype`.'
     config_param :sourcetype_key, :string, default: nil
 
-    desc "Field name to contain metric name, this is required when `data_type` is 'metric'."
+    desc 'When `data_type` is set to "metric", by default it will treat every key-value pair in the income event as a metric name-metric value pair. Set `metrics_from_event` to `false` to disable this behavior and use `metric_name_key` and `metric_value_key` to define metrics.'
+    config_param :metrics_from_event, :bool, default: true
+
+    desc "Field name to contain metric name. This is exclusive with `metrics_from_event`, when this is set, `metrics_from_event` will be set to `false`."
     config_param :metric_name_key, :string, default: nil
 
-    desc "Field name to contain metric value, this is required when `data_type` is 'metric'."
+    desc "Field name to contain metric value, this is required when `metric_name_key` is set."
     config_param :metric_value_key, :string, default: nil
 
     desc 'When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, `metric_value_key` will not be removed from the original event.'
@@ -126,7 +129,7 @@ module Fluent::Plugin
       super
 
       check_conflict
-      check_metric_requirements
+      check_metric_configs
       construct_api
       prepare_key_fields
       configure_fields
@@ -171,13 +174,16 @@ module Fluent::Plugin
       }
     end
 
-    def check_metric_requirements
+    def check_metric_configs
       return unless @data_type == :metric
 
-      %w[metric_name_key metric_value_key].each { |config|
-	raise Fluent::ConfigError, "#{config} is required when `data_type` is 'metric'." \
-	  unless instance_variable_get("@#{config}")
-      }
+      @metrics_from_event = false if @metric_name_key
+
+      return if @metrics_from_event
+
+      raise Fluent::ConfigError, "`metric_name_key` is required when `metrics_from_event` is `false`." unless @metric_name_key
+
+      raise Fluent::ConfigError, "`metric_value_key` is required when `metric_name_key` is set." unless @metric_value_key
     end
 
     def prepare_key_fields
@@ -249,26 +255,38 @@ module Fluent::Plugin
     end
 
     def format_metric(tag, time, record)
-      MultiJson.dump({
+      payload = {
 	host: @host ? @host.(tag, record) : @default_host,
 	time: time.to_i,
 	event: 'metric'
-      }.tap { |payload|
-	payload[:index] = @index.(tag, record) if @index
-	payload[:source] = @source.(tag, record) if @source
-	payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
+      }
+      payload[:index] = @index.(tag, record) if @index
+      payload[:source] = @source.(tag, record) if @source
+      payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
 
+      if not @metrics_from_event
 	fields = {
 	  metric_name: @metric_name.(tag, record),
 	  _value: @metric_value.(tag, record)
 	}
+
        if @extra_fields
 	  fields.update @extra_fields.map { |name, field| [name, record[field]] }.to_h
 	else
 	  fields.update record
 	end
+
 	payload[:fields] = convert_to_utf8 fields
-      })
+
+	return MultiJson.dump(payload)
+      end
+
+      # when metrics_from_event is true, generate one metric event for each key-value in record
+      payloads = record.map { |key, value|
+	{fields: {metric_name: key, _value: value}}.merge! payload
+      }
+
+      payloads.map!(&MultiJson.method(:dump)).join
     end
 
     def construct_api
@@ -322,7 +340,10 @@ module Fluent::Plugin
       # For both success response (2xx) and client errors (4xx), we will consume the chunk.
       # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
       commit_write(chunk.unique_id)
-      log.error "Failed POST to #{@hec_api}, response: #{response.body}" if not response.code.start_with?('2')
+      if not response.code.start_with?('2')
+	log.error "Failed POST to #{@hec_api}, response: #{response.body}"
+	log.debug { "Failed request body: #{post.body}" }
+      end
     end
 
     # Encode as UTF-8. If 'coerce_to_utf8' is set to true in the config, any
