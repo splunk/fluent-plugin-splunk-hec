@@ -11,4 +11,8 @@
   steps:
   - command: echo Deployed Splunk!
 
-
+- type: parallel
+  services:
+  - integrationtests
+  steps:
+  - command: echo Deployed Splunk!

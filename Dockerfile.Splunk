@@ -52,10 +52,6 @@ EXPOSE 8000/tcp 8089/tcp 8191/tcp 9997/tcp 1514 8088/tcp
 
 WORKDIR /opt/splunk
 
-#Allow remote logging and reduce the minFreeSpace size to 1GB
-#RUN mkdir -p /opt/splunk/etc/system/local
-#COPY ci/server.conf /opt/splunk/etc/system/local/server.conf
-
 COPY ci/run-splunk.sh /opt/splunk/run-splunk.sh
 RUN chmod +x run-splunk.sh
 

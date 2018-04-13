@@ -2,6 +2,7 @@ builder:
   build:
     image: splunk/fluent-plugin-splunk-hec
     dockerfile_path: Dockerfile
+  hostname: fluent-plugin-splunk-hec
   cached: false
 
 unittests:
@@ -11,14 +12,6 @@ unittests:
   volumes_from:
     - builder
 
-awsdeployment:
-  image: codeship/aws-deployment
-  encrypted_env_file: aws-deployment.env.encrypted
-  environment:
-    - AWS_DEFAULT_REGION=us-east-1
-  volumes:
-    - ./:/deploy
-
 deploysplunk:
   build:
     image: splunkimage
@@ -27,3 +20,11 @@ deploysplunk:
   environment:
   - SPLUNK_START_ARGS=--accept-license
   - SPLUNK_USER=root
+
+integrationtests:
+  build:
+    image: Dockerfile.Fluentd
+    dockerfile_path: Dockerfile.Fluentd
+  link:
+    - builder
+    - deploysplunk
