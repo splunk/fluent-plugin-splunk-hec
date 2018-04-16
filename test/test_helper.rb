@@ -1,3 +1,6 @@
+require 'simplecov'
+
+SimpleCov.start
 $LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
 $LOAD_PATH.unshift File.expand_path("../lib", __FILE__)
 require "fluent/plugin/out_splunk_hec"
@@ -7,6 +10,7 @@ require "fluent/test/driver/output"
 require "fluent/test/helpers"
 require "minitest/autorun"
 require "webmock/minitest"
+
 
 # make assertions from webmock available in minitest/spec
 module Minitest::Expectations

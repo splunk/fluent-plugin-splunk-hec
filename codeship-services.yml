@@ -15,16 +15,15 @@ unittests:
 deploysplunk:
   build:
     image: splunkimage
-    dockerfile_path: Dockerfile.Splunk
+    dockerfile_path: Dockerfile-Splunk
   hostname: splunk
   environment:
   - SPLUNK_START_ARGS=--accept-license
   - SPLUNK_USER=root
 
-integrationtests:
+fluentd:
   build:
-    image: Dockerfile.Fluentd
-    dockerfile_path: Dockerfile.Fluentd
-  link:
-    - builder
-    - deploysplunk
+    image: fluentd
+    dockerfile_path: Dockerfile-Fluentd
+  depends_on:
+    - unittests
