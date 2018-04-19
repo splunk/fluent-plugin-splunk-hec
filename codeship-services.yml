@@ -3,7 +3,7 @@ builder:
     image: splunk/fluent-plugin-splunk-hec
     dockerfile_path: Dockerfile
   hostname: fluent-plugin-splunk-hec
-  cached: false
+  cached: true
 
 unittests:
   build:
@@ -25,5 +25,7 @@ fluentd:
   build:
     image: fluentd
     dockerfile_path: Dockerfile-Fluentd
-  depends_on:
-    - unittests
+    hostname: fluentd
+    volumes_from:
+      - builder
+    

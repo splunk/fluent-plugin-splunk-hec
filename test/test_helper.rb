@@ -1,6 +1,3 @@
-require 'simplecov'
-
-SimpleCov.start
 $LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
 $LOAD_PATH.unshift File.expand_path("../lib", __FILE__)
 require "fluent/plugin/out_splunk_hec"

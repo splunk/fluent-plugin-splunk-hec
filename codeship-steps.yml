@@ -6,13 +6,16 @@
 - type: serial
   service: unittests
   steps:
-  - command: echo Unit Tests complete!
-  - command: gem build fluent-plugin-splunk-hec.gemspec
+  - command: rake test
 
 - type: parallel
-  services: 
-  - deploysplunk
-  - fluentd
+  service: deploysplunk
   steps:
   - command: echo Deployed Splunk!
-  depends_on: unittests
+
+#- type: parallel
+#  service: fluentd
+#  steps:
+#  - command: echo Deployed Fluentd!
+
+
