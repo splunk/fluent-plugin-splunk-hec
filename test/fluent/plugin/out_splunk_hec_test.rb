@@ -194,6 +194,7 @@ describe Fluent::Plugin::SplunkHecOutput do
 	</fields>
       CONF
         batch.each do |item|
+	  # only "metric_name" and "_value"
 	  expect(item['fields'].keys.size).must_equal 2
 	end
       }
@@ -207,12 +208,15 @@ describe Fluent::Plugin::SplunkHecOutput do
 	<fields>
 	  level
 	  filePath file
+	  username
 	</fields>
       CONF
         batch.each do |item|
 	  expect(item['fields'].keys.size).must_equal 4
 	  expect(item['fields']['level']).must_equal 'info'
 	  expect(item['fields']['filePath']).must_equal 'cool.log'
+	  # null fields should be removed
+	  expect(item['fields']).wont_be :has_key?, 'username'
 	end
       }
     end
