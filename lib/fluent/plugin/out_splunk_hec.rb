@@ -93,7 +93,7 @@ module Fluent::Plugin
     desc 'When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, `metric_value_key` will not be removed from the original event.'
     config_param :keep_keys, :bool, default: false
 
-    desc 'Define index-time fields for event data type, or metric dimensions for metric data type. '
+    desc 'Define index-time fields for event data type, or metric dimensions for metric data type. Null value fields will be removed.'
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
     end
@@ -132,7 +132,7 @@ module Fluent::Plugin
       check_metric_configs
       construct_api
       prepare_key_fields
-      configure_fields
+      configure_fields(conf)
       pick_custom_format_method
 
       # @formatter_configs is from formatter helper
@@ -155,7 +155,7 @@ module Fluent::Plugin
       @chunk_queue << chunk
     end
 
-    def stop
+    def close
       @chunk_queue.close
       super
     end
@@ -214,7 +214,13 @@ module Fluent::Plugin
     # <fields> directive, which defines:
     # * when data_type is event, index-time fields
     # * when data_type is metric, metric dimensions
-    def configure_fields
+    def configure_fields(conf)
+      # This loop looks dump, but it is used to suppress the unused parameter configuration warning
+      # Learned from `filter_record_transformer`.
+      conf.elements.select { |element| element.name == 'fields' }.each do |element|
+        element.each_pair { |k, v| element.has_key?(k) }
+      end
+
       return unless @fields
 
       @extra_fields = @fields.corresponding_config_element.map { |k, v|
@@ -270,11 +276,13 @@ module Fluent::Plugin
 	  _value: @metric_value.(tag, record)
 	}
 
-       if @extra_fields
+	if @extra_fields
 	  fields.update @extra_fields.map { |name, field| [name, record[field]] }.to_h
 	else
 	  fields.update record
 	end
+
+	fields.compact!
 
 	payload[:fields] = convert_to_utf8 fields
 
