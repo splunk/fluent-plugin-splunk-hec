@@ -155,7 +155,7 @@ module Fluent::Plugin
       @chunk_queue << chunk
     end
 
-    def stop
+    def close
       @chunk_queue.close
       super
     end
