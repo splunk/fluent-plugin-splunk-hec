@@ -132,7 +132,7 @@ module Fluent::Plugin
       check_metric_configs
       construct_api
       prepare_key_fields
-      configure_fields
+      configure_fields(conf)
       pick_custom_format_method
 
       # @formatter_configs is from formatter helper
@@ -214,7 +214,13 @@ module Fluent::Plugin
     # <fields> directive, which defines:
     # * when data_type is event, index-time fields
     # * when data_type is metric, metric dimensions
-    def configure_fields
+    def configure_fields(conf)
+      # This loop looks dump, but it is used to suppress the unused parameter configuration warning
+      # Learned from `filter_record_transformer`.
+      conf.elements.select { |element| element.name == 'fields' }.each do |element|
+        element.each_pair { |k, v| element.has_key?(k) }
+      end
+
       return unless @fields
 
       @extra_fields = @fields.corresponding_config_element.map { |k, v|

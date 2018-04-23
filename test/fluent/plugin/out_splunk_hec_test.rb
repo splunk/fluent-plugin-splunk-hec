@@ -131,7 +131,7 @@ describe Fluent::Plugin::SplunkHecOutput do
   end
 
   it "should support fields for indexed field extraction" do
-    d = verify_sent_events(<<~CONF) { |batch|
+    verify_sent_events(<<~CONF) { |batch|
     <fields>
       from
       logLevel level
@@ -234,14 +234,14 @@ describe Fluent::Plugin::SplunkHecOutput do
 
   def with_stub_hec(events:, conf: '', &blk)
     host = "hec.splunk.com"
-    d = create_output_driver("hec_host #{host}", conf)
+    @driver = create_output_driver("hec_host #{host}", conf)
 
     hec_req = stub_hec_request("https://#{host}:8088").with { |r|
       blk.call r.body.split(/(?={)\s*(?<=})/).map { |item| JSON.load item }
     }
 
-    d.run do
-      events.each { |evt| d.feed *evt }
+    @driver.run do
+      events.each { |evt| @driver.feed *evt }
     end
 
     hec_req
