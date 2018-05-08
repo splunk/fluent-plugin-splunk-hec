@@ -135,6 +135,7 @@ describe Fluent::Plugin::SplunkHecOutput do
     <fields>
       from
       logLevel level
+      nonexist
     </fields>
     CONF
       batch.each do |item|
@@ -145,6 +146,7 @@ describe Fluent::Plugin::SplunkHecOutput do
 
 	expect(item['fields']['from']).must_equal 'my_machine'
 	expect(item['fields']['logLevel']).must_equal 'info'
+	expect(item['fields']).wont_be :has_key?, 'nonexist'
       end
     }
   end
