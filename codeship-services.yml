@@ -1,31 +1,52 @@
-builder:
-  build:
-    image: splunk/fluent-plugin-splunk-hec
-    dockerfile_path: Dockerfile
-  hostname: fluent-plugin-splunk-hec
-  cached: true
+version: '3'
 
-unittests:
-  build:
-    image: splunk/fluent-plugin-splunk-hec
-    dockerfile_path: Dockerfile
-  volumes_from:
+services:
+  builder:
+    build: 
+      dockerfile: Dockerfile
+      image: splunk/fluentd-hec-out
+  
+  unittests:
+    image: splunk/fluentd-hec-out
+    depends_on:
     - builder
+  
 
-deploysplunk:
-  build:
-    image: splunkimage
-    dockerfile_path: Dockerfile-Splunk
-  hostname: splunk
-  environment:
-  - SPLUNK_START_ARGS=--accept-license
-  - SPLUNK_USER=root
-
-fluentd:
-  build:
-    image: fluentd
-    dockerfile_path: Dockerfile-Fluentd
-    hostname: fluentd
-    volumes_from:
-      - builder
+  # fluentd-hec-out: <- Need a new fluentd imag
+  #   build:
+  #     image: fluentd-hec-out
+  #     dockerfile: Dockerfile-Fluentd
+  #   hostname: fluentd-hec-out
+  #   cached: true
+  #   environment:
+  #     - SPLUNK_HOST="splunk"
+  #     - SPLUNK_PROTOCOL="https"
+  #     - SPLUNK_PORT="8088"
+  #     - SPLUNK_HEC_TOKEN="00000000-0000-0000-0000-000000000000"
+  #   depends_on:
+  #     - splunk
     
+  splunk:
+    image: naughtytao/splunk:7.1.0
+    hostname: splunk
+    environment:
+    - SPLUNK_START_ARGS=--accept-license --answer-yes --seed-passwd Chang3d!
+    - SPLUNK_USER=root
+    - SPLUNK_CMD_1=http-event-collector create k8s-hec -uri https://localhost:8089 -disabled 0 -auth admin:Chang3d!
+    - SPLUNK_CMD_2=http-event-collector enable -uri https://localhost:8089 -disabled 0 -auth admin:Chang3d!
+    ports:
+      - containerPort: 8089
+      - containerPort: 8088
+      - containerPort: 8000
+    volumeMounts:
+    - mountPath: /opt/splunk/etc
+      name: splunk-volume-etc
+    - mountPath: /opt/splunk/var
+      name: splunk-volume-var
+volumes:
+  - name: splunk-volume-etc
+    emptyDir: {}
+  - name: splunk-volume-var
+    emptyDir: {}
+
+

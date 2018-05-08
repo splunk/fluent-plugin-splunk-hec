@@ -1,21 +1,19 @@
 - type: serial
   service: builder
   steps:
-  - command: echo Build complete
+  - command: echo Finished Building
 
 - type: serial
   service: unittests
   steps:
   - command: rake test
 
-- type: parallel
-  service: deploysplunk
-  steps:
-  - command: echo Deployed Splunk!
+# - type: serial
+#   service: splunk <- need a way to stop splunk as splunk remains running which blocks further teps
+#   steps:
+#   - command: splunk-start
 
-#- type: parallel
-#  service: fluentd
-#  steps:
-#  - command: echo Deployed Fluentd!
-
-
+#   - name: test
+#     service: fluentd-hec-out
+#     command: /app/test-splunk.sh
+# curl
