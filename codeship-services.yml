@@ -3,7 +3,7 @@ version: '3'
 services:
   builder:
     build: 
-      dockerfile: Dockerfile
+      dockerfile: /ci/Dockerfile
       image: splunk/fluentd-hec-out
   
   unittests:
