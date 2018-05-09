@@ -9,3 +9,6 @@
 *.gem
 *.aes
 coverage
+/ci/
+codeship*
+Dockerfile*

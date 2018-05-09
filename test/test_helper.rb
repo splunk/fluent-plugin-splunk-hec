@@ -8,6 +8,7 @@ require "fluent/test/helpers"
 require "minitest/autorun"
 require "webmock/minitest"
 
+
 # make assertions from webmock available in minitest/spec
 module Minitest::Expectations
   infect_an_assertion :assert_requested, :must_be_requested, :reverse

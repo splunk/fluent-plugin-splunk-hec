@@ -1,3 +1,4 @@
+[ ![Codeship Status for splunk/fluent-plugin-splunk-hec](https://app.codeship.com/projects/7905e540-105f-0136-dde3-2adac7655f3e/status?branch=master)](https://app.codeship.com/projects/282733)
 # fluent-plugin-splunk-hec
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) over the HEC (HTTP Event Collector) API.
