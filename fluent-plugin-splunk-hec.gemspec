@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
     Rakefile VERSION
   ] + Dir.glob('lib/**/**').reject(&File.method(:directory?))
 
-  spec.required_ruby_version = '>= 2.3.0'
+  spec.required_ruby_version = '>= 2.4.0'
 
   spec.add_runtime_dependency "fluentd", "~> 1.0"
   spec.add_runtime_dependency "multi_json", "~> 1.13"
