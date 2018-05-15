@@ -221,10 +221,11 @@ MIT licenses
 The following components are provided under the MIT License. See project link for details.
 
     (MIT License) multi_json (https://github.com/intridea/multi_json/blob/master/LICENSE.md)
-    (MIT License) net-http-persistent (https://github.com/drbrain/net-http-persistent/blob/master/README.rdoc)
+    (MIT License) net-http-persistent (https://github.com/drbrain/net-http-persistent/blob/master/README.rdoc#license)
     (MIT License) bundler (https://github.com/bundler/bundler/blob/master/LICENSE.md)
     (MIT License) rake (https://github.com/ruby/rake/blob/master/MIT-LICENSE)
     (MIT License) webmock (https://github.com/bblimke/webmock/blob/master/LICENSE)
+    (MIT License) minitest (https://github.com/seattlerb/minitest/blob/master/README.rdoc#license)
 
 ========================================================================
 For test-unit:
