@@ -97,7 +97,7 @@ module Fluent::Plugin
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
     end
-    
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -239,7 +239,7 @@ module Fluent::Plugin
     def format_event(tag, time, record)
       MultiJson.dump({
 	host: @host ? @host.(tag, record) : @default_host,
-	time: time.to_i
+	time: time.to_f
       }.tap { |payload|
 	payload[:index] = @index.(tag, record) if @index
 	payload[:source] = @source.(tag, record) if @source
@@ -264,7 +264,7 @@ module Fluent::Plugin
     def format_metric(tag, time, record)
       payload = {
 	host: @host ? @host.(tag, record) : @default_host,
-	time: time.to_i,
+	time: time.to_f,
 	event: 'metric'
       }
       payload[:index] = @index.(tag, record) if @index
