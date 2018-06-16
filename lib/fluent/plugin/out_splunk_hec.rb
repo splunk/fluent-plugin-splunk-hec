@@ -239,7 +239,7 @@ module Fluent::Plugin
     def format_event(tag, time, record)
       MultiJson.dump({
 	host: @host ? @host.(tag, record) : @default_host,
-	time: time.to_i
+	time: time.to_f
       }.tap { |payload|
 	payload[:index] = @index.(tag, record) if @index
 	payload[:source] = @source.(tag, record) if @source
