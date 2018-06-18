@@ -36,6 +36,15 @@ module Fluent::Plugin
     desc 'The HEC token.'
     config_param :hec_token, :string
 
+    desc 'If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection. nil means no timeout.'
+    config_param :idle_timeout, :integer, default: 5
+
+    desc 'The amount of time allowed between reading two chunks from the socket.'
+    config_param :read_timeout, :integer, default: nil
+
+    desc 'The amount of time to wait for a connection to be opened.'
+    config_param :open_timeout, :integer, default: nil
+
     desc 'The path to a file containing a PEM-format CA certificate for this client.'
     config_param :client_cert, :string, default: nil
 
@@ -97,7 +106,7 @@ module Fluent::Plugin
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
     end
-    
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -321,16 +330,19 @@ module Fluent::Plugin
 
     def new_connection
       Net::HTTP::Persistent.new.tap do |c|
-	c.verify_mode = @insecure_ssl ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
-	c.cert = OpenSSL::X509::Certificate.new File.read(@client_cert) if @client_cert
-	c.key = OpenSSL::PKey::RSA.new File.read(@client_key) if @client_key
-	c.ca_file = @ca_file
-	c.ca_path = @ca_path
-	c.ciphers = @ssl_ciphers
+        c.verify_mode = @insecure_ssl ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+        c.cert = OpenSSL::X509::Certificate.new File.read(@client_cert) if @client_cert
+        c.key = OpenSSL::PKey::RSA.new File.read(@client_key) if @client_key
+        c.ca_file = @ca_file
+        c.ca_path = @ca_path
+        c.ciphers = @ssl_ciphers
+        c.idle_timeout = @idle_timeout
+        c.read_timeout = @read_timeout
+        c.open_timeout = @open_timeout
 
-	c.override_headers['Content-Type'] = 'application/json'
-	c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
-	c.override_headers['Authorization'] = "Splunk #{@hec_token}"
+        c.override_headers['Content-Type'] = 'application/json'
+        c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
+        c.override_headers['Authorization'] = "Splunk #{@hec_token}"
       end
     end
 
