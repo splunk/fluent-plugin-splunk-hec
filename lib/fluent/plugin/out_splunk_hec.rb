@@ -121,7 +121,6 @@ module Fluent::Plugin
     def initialize
       super
       @default_host = Socket.gethostname
-      @chunk_queue = SizedQueue.new 1
       @extra_fields = nil
     end
 
@@ -143,21 +142,17 @@ module Fluent::Plugin
 
     def start
       super
-      start_worker_threads
+
+      @hec_conn = new_connection
     end
 
     def format(tag, time, record)
       # this method will be replaced in `configure`
     end
 
-    def try_write(chunk)
+    def write(chunk)
       log.debug { "Received new chunk, size=#{chunk.read.bytesize}" }
-      @chunk_queue << chunk
-    end
-
-    def close
-      @chunk_queue.close
-      super
+      send_to_hec chunk
     end
 
     def multi_workers_ready?
@@ -312,51 +307,35 @@ module Fluent::Plugin
       raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
     end
 
-    def start_worker_threads
-      thread_create :"hec_worker_#{@hec_api}" do
-	http = new_connection
-	while chunk = get_next_chunk
-	  send_to_hec http, chunk
-	end
-      end
-    end
-
-    def get_next_chunk
-      @chunk_queue.pop @chunk_queue.closed?
-    rescue ThreadError # see SizedQueue#pop doc
-      nil
-    end
-
     def new_connection
       Net::HTTP::Persistent.new.tap do |c|
-	c.verify_mode = @insecure_ssl ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
-	c.cert = OpenSSL::X509::Certificate.new File.read(@client_cert) if @client_cert
-	c.key = OpenSSL::PKey::RSA.new File.read(@client_key) if @client_key
-	c.ca_file = @ca_file
-	c.ca_path = @ca_path
-	c.ciphers = @ssl_ciphers
+        c.verify_mode = @insecure_ssl ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+        c.cert = OpenSSL::X509::Certificate.new File.read(@client_cert) if @client_cert
+        c.key = OpenSSL::PKey::RSA.new File.read(@client_key) if @client_key
+        c.ca_file = @ca_file
+        c.ca_path = @ca_path
+        c.ciphers = @ssl_ciphers
 
-	c.override_headers['Content-Type'] = 'application/json'
-	c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
-	c.override_headers['Authorization'] = "Splunk #{@hec_token}"
+        c.override_headers['Content-Type'] = 'application/json'
+        c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
+        c.override_headers['Authorization'] = "Splunk #{@hec_token}"
       end
     end
 
-    def send_to_hec(http, chunk)
+    def send_to_hec(chunk)
       post = Net::HTTP::Post.new @hec_api.request_uri
       post.body = chunk.read
       log.debug { "Sending #{post.body.bytesize} bytes to Splunk." }
 
       log.trace { "POST #{@hec_api} body=#{post.body}" }
-      response = http.request @hec_api, post
+      response = @hec_conn.request @hec_api, post
       log.debug { "[Response] POST #{@hec_api}: #{response.inspect}" }
 
       # raise Exception to utilize Fluentd output plugin retry machanism
-      raise "Server error for POST #{@hec_api}, response: #{response.body}" if response.code.start_with?('5')
+      raise "Server error (#{response.code}) for POST #{@hec_api}, response: #{response.body}" if response.code.start_with?('5')
 
       # For both success response (2xx) and client errors (4xx), we will consume the chunk.
       # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
-      commit_write(chunk.unique_id)
       if not response.code.start_with?('2')
 	log.error "Failed POST to #{@hec_api}, response: #{response.body}"
 	log.debug { "Failed request body: #{post.body}" }
