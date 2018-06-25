@@ -31,6 +31,15 @@ describe Fluent::Plugin::SplunkHecOutput do
     expect(req).must_be_requested times: 1
   end
 
+  it "should use string for event time, and the value of the string should be a float" do
+    verify_sent_events { |batch|
+      batch.each do |item|
+	expect(item['time']).must_be_instance_of String
+	expect(item['time']).must_match /^\d+\.\d+$/
+      end
+    }
+  end
+
   it "should use host machine's hostname for event host by default" do
     verify_sent_events { |batch|
       batch.each do |item|
