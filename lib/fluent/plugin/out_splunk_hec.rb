@@ -16,7 +16,7 @@ module Fluent::Plugin
     autoload :VERSION, "fluent/plugin/out_splunk_hec/version"
     autoload :MatchFormatter, "fluent/plugin/out_splunk_hec/match_formatter"
 
-    KEY_FIELDS = %w[index host source sourcetype metric_name metric_value].freeze
+    KEY_FIELDS = %w[index time host source sourcetype metric_name metric_value].freeze
     TAG_PLACEHOLDER = '${tag}'.freeze
 
     MISSING_FIELD = Hash.new { |h, k|
@@ -57,8 +57,12 @@ module Fluent::Plugin
     desc 'Type of data sending to Splunk, `event` or `metric`. `metric` type is supported since Splunk 7.0. To use `metric` type, make sure the index is a metric index.'
     config_param :data_type, :enum, list: %i[event metric], default: :event
 
+    
     desc 'The Splunk index to index events. When not set, will be decided by HEC. This is exclusive with `index_key`'
     config_param :index, :string, default: nil
+
+    desc 'Field name to contain Splunk event itme. By default will use fluentd\'d time'
+    config_param :time_key, :string, default: nil
 
     desc 'Field name to contain Splunk index name. This is exclusive with `index`.'
     config_param :index_key, :string, default: nil
@@ -240,6 +244,16 @@ module Fluent::Plugin
 	# That's why we use `to_s` here.
 	time: time.to_f.to_s
       }.tap { |payload|
+  
+  
+	if @time
+	time_value = @time.(tag, record)
+	# if no value is found don't override and use fluentd's time
+	if !time_value.nil?
+	  payload[:time] = time_value
+	  end
+	end
+
 	payload[:index] = @index.(tag, record) if @index
 	payload[:source] = @source.(tag, record) if @source
 	payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
