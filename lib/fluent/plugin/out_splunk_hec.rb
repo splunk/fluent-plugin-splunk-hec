@@ -231,6 +231,21 @@ module Fluent::Plugin
       end
     end
 
+    # Format hash using dot-notation
+    def dot_it(object, prefix = nil)
+      if object.is_a? Hash
+        object.map do |key, value|
+          if prefix
+            dot_it value, "#{prefix}.#{key}"
+          else
+            dot_it value, "#{key}"
+          end
+        end.reduce(&:merge)
+      else
+        {prefix => object}
+      end
+    end
+
     def format_event(tag, time, record)
       MultiJson.dump({
 	host: @host ? @host.(tag, record) : @default_host,
@@ -248,7 +263,7 @@ module Fluent::Plugin
 	%i[host index source sourcetype].each { |f| payload.delete f if payload[f].nil? }
 
 	if @extra_fields
-	  payload[:fields] = @extra_fields.map { |name, field| [name, record[field]] }.to_h
+	  payload[:fields] = dot_it @extra_fields.map { |name, field| [name, record[field]] }.to_h
 	  payload[:fields].compact!
 	  # if a field is already in indexed fields, then remove it from the original event
 	  @extra_fields.values.each { |field| record.delete field }
