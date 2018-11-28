@@ -1,0 +1,40 @@
+# Ruby CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-ruby/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+       - image: circleci/ruby:2.4.1-node-browsers
+       - image: luckyj5/splunk-circleci-hec-720:latest
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            gem install bundler
+            bundle install --jobs=4 --retry=3 --path vendor/bundler
+
+      - run:
+          name: Builder
+          command: |
+            rake build -t -v
+
+      - run:
+          name: Run unit tests
+          command: |
+            rake test -t -v
+
+      - run:
+          name: Deploy plugin
+          command: |
+            .circleci/integration/run.sh
+
+      - run:
+          name: Run integration tests
+          command: |
+            .circleci/integration/test.sh
