@@ -1,4 +1,4 @@
-[ ![Codeship Status for splunk/fluent-plugin-splunk-hec](https://app.codeship.com/projects/7905e540-105f-0136-dde3-2adac7655f3e/status?branch=master)](https://app.codeship.com/projects/282733)
+[![CircleCI](https://circleci.com/gh/git-lfs/git-lfs.svg?style=shield&circle-token=856152c2b02bfd236f54d21e1f581f3e4ebf47ad)](https://circleci.com/gh/splunk/fluent-plugin-splunk-hec)
 # fluent-plugin-splunk-hec
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) over the HEC (HTTP Event Collector) API.
@@ -6,11 +6,9 @@
 ## Installation
 
 ### RubyGems
-
-```
+``` 
 $ gem install fluent-plugin-splunk-hec
 ```
-
 ### Bundler
 
 Add following line to your Gemfile:
@@ -378,4 +376,4 @@ Here are some hints:
 
 ## License
 
-Please see [LICENSE](LICENSE).
+Please see [LICENSE](LICENSE). 
