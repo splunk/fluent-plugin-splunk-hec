@@ -1,7 +1,3 @@
-# Ruby CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-ruby/ for more details
-#
 version: 2
 jobs:
   build:
@@ -16,6 +12,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            sudo gem update --system
             gem install bundler
             bundle install --jobs=4 --retry=3 --path vendor/bundler
 
@@ -30,7 +27,7 @@ jobs:
             rake test -t -v
 
       - run:
-          name: Deploy plugin
+          name: Start fluentd plugin
           command: |
             .circleci/integration/run.sh
 
@@ -38,3 +35,8 @@ jobs:
           name: Run integration tests
           command: |
             .circleci/integration/test.sh
+
+      - run:
+          name: Push rubygem to s3
+          command: |
+            .circleci/push.sh
