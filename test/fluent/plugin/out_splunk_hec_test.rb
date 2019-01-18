@@ -94,7 +94,7 @@ describe Fluent::Plugin::SplunkHecOutput do
     }
   end
 
-  it "should remove nil fileds." do
+  it "should remove nil fields." do
     verify_sent_events(<<~CONF) { |batch|
       index_key      nonexist
       host_key       nonexist
@@ -111,7 +111,7 @@ describe Fluent::Plugin::SplunkHecOutput do
   end
 
   describe 'formatter' do
-    it "should support replace the default json formater" do
+    it "should support replace the default json formatter" do
       verify_sent_events(<<~CONF) { |batch|
 	<format>
 	  @type single_value
@@ -240,6 +240,20 @@ describe Fluent::Plugin::SplunkHecOutput do
       with_stub_hec(events: metrics, conf: 'data_type metric') { |batch|
 	expect(batch.size).must_equal 4
       }
+    end
+  end
+
+  describe 'timeout params' do
+    it 'should reset unused connection after 5 seconds' do
+      expect(create_output_driver('hec_host idle_timeout', 5).instance.idle_timeout).must_equal 5
+    end
+
+    it 'should allow nil between reading chunks from the socket' do
+      expect(create_output_driver('hec_host read_timeout', 5).instance.read_timeout).must_equal nil
+    end
+
+    it 'should use nil to wait for a connection to be opened' do
+      expect(create_output_driver('hec_host open_timeout', 5).instance.open_timeout).must_equal nil
     end
   end
 
