@@ -338,15 +338,15 @@ The following parameters can be used for tuning HTTP connections
 
 #### idle_timeout (integer)
 
-If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection; nil means no timeout. The default is 5 seconds.
+The default is 5 seconds. If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection; nil means no timeout. 
 
 #### read_timeout (integer)
 
-The amount of time allowed between reading two chunks from the socket.
+The default is nil. The amount of time allowed between reading two chunks from the socket.
 
 #### open_timeout (integer)
 
-The amount of time to wait for a connection to be opened.
+The default is nil. The amount of time to wait for a connection to be opened.
 
 ### SSL parameters
 
