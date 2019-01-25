@@ -40,8 +40,13 @@ describe Fluent::Plugin::SplunkHecOutput do
     }
   end
 
+  # it "should contain splunk event time field via fluentd, as nil" do
+  #   expect(create_output_driver('hec_host splunk.com').instance.time_key).must_equal nil
+  # end
+  #
   it "should contain splunk event time field via fluentd, as nil" do
-    expect(create_output_driver('hec_host splunk.com').instance.time_key).must_equal nil
+        test_driver = create_output_driver('hec_host splunk.com')
+        assert_nil(test_driver.instance.time_key)
   end
 
   it "should use host machine's hostname for event host by default" do
