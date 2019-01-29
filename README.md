@@ -332,6 +332,22 @@ If you want to use a different default formatter, you can add a `<format **>` (o
 
 Defines which formatter to use.
 
+### Net::HTTP::Persistent parameters (optional)
+
+The following parameters can be used for tuning HTTP connections
+
+#### idle_timeout (integer)
+
+The default is 5 seconds. If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection; nil means no timeout. 
+
+#### read_timeout (integer)
+
+The default is nil. The amount of time allowed between reading two chunks from the socket.
+
+#### open_timeout (integer)
+
+The default is nil. The amount of time to wait for a connection to be opened.
+
 ### SSL parameters
 
 There are quite some parameters you can use to configure SSL (for HTTPS protocol).

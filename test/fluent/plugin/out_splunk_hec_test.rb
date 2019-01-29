@@ -94,7 +94,7 @@ describe Fluent::Plugin::SplunkHecOutput do
     }
   end
 
-  it "should remove nil fileds." do
+  it "should remove nil fields." do
     verify_sent_events(<<~CONF) { |batch|
       index_key      nonexist
       host_key       nonexist
@@ -111,7 +111,7 @@ describe Fluent::Plugin::SplunkHecOutput do
   end
 
   describe 'formatter' do
-    it "should support replace the default json formater" do
+    it "should support replace the default json formatter" do
       verify_sent_events(<<~CONF) { |batch|
 	<format>
 	  @type single_value
@@ -242,6 +242,27 @@ describe Fluent::Plugin::SplunkHecOutput do
       }
     end
   end
+
+  describe 'timeout params' do
+      it 'should reset unused connection after 5 seconds' do
+        expect(create_output_driver('hec_host splunk.com', 'idle_timeout 5').instance.idle_timeout).must_equal 5
+      end
+
+      it 'should allow custom setting between reading chunks from the socket' do
+        expect(create_output_driver('hec_host splunk.com', 'read_timeout 5').instance.read_timeout).must_equal 5
+      end
+
+      it 'should allow custom setting a connection to be opened' do
+        expect(create_output_driver('hec_host splunk.com',  'open_timeout 5').instance.open_timeout).must_equal 5
+      end
+
+      it 'should check default values are created correctly for timeout params' do
+        test_driver = create_output_driver('hec_host splunk.com')
+        expect(test_driver.instance.idle_timeout).must_equal 5
+        assert_nil(test_driver.instance.read_timeout)
+        assert_nil(test_driver.instance.open_timeout)
+      end
+    end
 
   def with_stub_hec(events:, conf: '', &blk)
     host = "hec.splunk.com"
