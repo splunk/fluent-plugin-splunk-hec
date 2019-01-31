@@ -270,7 +270,7 @@ module Fluent::Plugin
 
 	if @extra_fields
 	  payload[:fields] = @extra_fields.map { |name, field| [name, record[field]] }.to_h
-	  payload[:fields].compact!
+    payload[:fields].delete_if { |_k,v| v.nil? }
 	  # if a field is already in indexed fields, then remove it from the original event
 	  @extra_fields.values.each { |field| record.delete field }
 	end
@@ -307,7 +307,7 @@ module Fluent::Plugin
 	  fields.update record
 	end
 
-	fields.compact!
+  fields.delete_if { |_k,v| v.nil? }
 
 	payload[:fields] = convert_to_utf8 fields
 
