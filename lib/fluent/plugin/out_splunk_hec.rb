@@ -125,7 +125,7 @@ module Fluent::Plugin
     config_param :coerce_to_utf8, :bool, :default => true
 
     desc <<~DESC
-    If `coerce_to_utf8` is set to true, any non-UTF-8 character would be
+    If `coerce_to_utf8` is set to true, any not-UTF-8 char's would be
     replaced by the string specified here.
     DESC
     config_param :non_utf8_replacement_string, :string, :default => ' '
@@ -249,7 +249,7 @@ module Fluent::Plugin
 	# From the API reference
 	# http://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTinput#services.2Fcollector
 	# `time` should be a string or unsigned integer.
-	# That's why we use `to_s` here.
+	# That's why we use the to_string function here.
 	time: time.to_f.to_s
       }.tap { |payload|
 
@@ -269,8 +269,8 @@ module Fluent::Plugin
 	%i[host index source sourcetype].each { |f| payload.delete f if payload[f].nil? }
 
 	if @extra_fields
-	  payload[:fields] = @extra_fields.map { |name, field| [name, record[field]] }.to_h
-	  payload[:fields].compact!
+    payload[:fields] = @extra_fields.map { |name, field| [name, record[field]] }.to_h
+    payload[:fields].delete_if { |_k,v| v.nil? }
 	  # if a field is already in indexed fields, then remove it from the original event
 	  @extra_fields.values.each { |field| record.delete field }
 	end
@@ -307,7 +307,7 @@ module Fluent::Plugin
 	  fields.update record
 	end
 
-	fields.compact!
+  fields.delete_if { |_k,v| v.nil? }
 
 	payload[:fields] = convert_to_utf8 fields
 
