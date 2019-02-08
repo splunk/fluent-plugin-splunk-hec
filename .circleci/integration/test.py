@@ -1,5 +1,5 @@
 """
-Copyright 2018 Splunk, Inc..
+Copyright 2019 Splunk, Inc..
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,8 +45,6 @@ def check_events_from_splunk(index="main",
     logger.info("search query = " + str(query))
     events = _collect_events(query, start_time, end_time, url, user, password)
     time.sleep(10)
-    logger.info("checking events")
-    logger.info("Events are " + str(events))
 
     if len(events) >= 20:
         logger.info("Integration test passed successfully! ")
