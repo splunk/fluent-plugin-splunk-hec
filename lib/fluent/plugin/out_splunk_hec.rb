@@ -399,7 +399,7 @@ module Fluent::Plugin
 		     'replace them with spaces, please set "coerce_to_utf8" ' \
 		     'to true.' }
 	  raise
-	end
+  end
       end
     end
   end

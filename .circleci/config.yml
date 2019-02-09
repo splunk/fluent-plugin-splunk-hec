@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-       - image: circleci/ruby:2.4.1-node-browsers
+       - image: circleci/ruby:2.6.1-node-browsers
        - image: luckyj5/splunk-circleci-hec-720:latest
 
     working_directory: ~/repo
@@ -16,7 +16,8 @@ jobs:
           command: |
             sudo gem update --system
             gem install bundler
-            bundle install --jobs=4 --retry=3 --path vendor/bundler
+            bundle update --bundler
+            bundle install
 
       - run:
           name: Builder
