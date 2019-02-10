@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 require 'fluent/match'
 
-class Fluent::Plugin::SplunkHecOutput::MatchFormatter
+class Fluent::Plugin::SplunkOutput::MatchFormatter
   def initialize(pattern, formatter)
     # stolen from fluentd/lib/fluent/event_router.rb
     patterns = pattern.split(/\s+/).map { |str| Fluent::MatchPattern.create(str) }
     @pattern = if patterns.length == 1
-		 patterns[0]
-	       else
-		 Fluent::OrMatchPattern.new(patterns)
-	       end
+                 patterns[0]
+               else
+                 Fluent::OrMatchPattern.new(patterns)
+               end
     @formatter = formatter
   end
 
