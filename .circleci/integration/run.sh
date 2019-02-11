@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 #Install and run fluentd-hec-plugin
-gem install pkg/fluent-plugin-splunk-hec-*.gem
+gem install /tmp/pkg/fluent-plugin-splunk-hec-*.gem
 sudo mkdir /etc/fluent
 sudo cp .circleci/integration/fluent.conf /etc/fluent/fluent.conf
 sudo cp .circleci/integration/test_file.txt /etc/
