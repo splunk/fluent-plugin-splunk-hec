@@ -3,10 +3,7 @@ jobs:
   build:
     docker:
        - image: circleci/ruby:2.6.1-node-browsers
-       - image: luckyj5/splunk-circleci-hec-720:latest
-
     working_directory: ~/repo
-
     steps:
       - checkout
       - setup_remote_docker:
@@ -14,39 +11,77 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            sudo gem update --system
-            gem install bundler
-            bundle update --bundler
-            bundle install
-
+            .circleci/install_dep.sh
       - run:
           name: Builder
           command: |
             echo "Update gem version to be latest from develop"
             sed -i -e 's/.*/'"${FLUENT_SPLUNK_HEC_GEM_VERSION}"'/' VERSION
             rake build -t -v
+            cp -R pkg /tmp
+      - persist_to_workspace:
+                root: /tmp
+                paths:
+                  - pkg
 
+  test:
+    docker:
+       - image: circleci/ruby:2.6.1-node-browsers
+       - image: luckyj5/splunk-circleci-hec-720:latest
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - checkout
+      - setup_remote_docker:
+           reusable: true
+      - run:
+          name: Install dependencies
+          command: |
+            .circleci/install_dep.sh
       - run:
           name: Run unit tests
           command: |
             rake test -t -v
-
       - run:
           name: Start fluentd plugin
           command: |
             .circleci/integration/run.sh
-
       - run:
           name: Run integration tests
           command: |
             .circleci/integration/test.sh
 
+  push:
+    docker:
+      - image: circleci/ruby:2.6.1-node-browsers
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - checkout
+      - setup_remote_docker:
+          reusable: true
       - run:
           name: Push rubygem to s3
           command: |
             .circleci/push_gem.sh
-
       - run:
           name: Build and push docker image to ecr
           command: |
             .circleci/build_and_push.sh
+
+workflows:
+  version: 2
+  build_test_push:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - push:
+          requires:
+            - test
+          filters:
+            branches:
+              only: develop
