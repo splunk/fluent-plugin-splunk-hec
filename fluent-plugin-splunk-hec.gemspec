@@ -1,8 +1,8 @@
 Gem::Specification.new do |spec|
   spec.name          = 'fluent-plugin-splunk-hec'
   spec.version       = File.read('VERSION')
-  spec.authors       = ['Zhimin (Gimi) Liang', 'Donald Tregonning']
-  spec.email         = ['dtregonning@splunk.com']
+  spec.authors       = ['Splunk Inc.']
+  spec.email         = ['DataEdge@splunk.com']
 
   spec.summary       = 'Fluentd plugin for Splunk HEC.'
   spec.description   = 'A fluentd output plugin created by Splunk
