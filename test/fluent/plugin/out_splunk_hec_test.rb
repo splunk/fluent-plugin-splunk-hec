@@ -346,7 +346,7 @@ describe Fluent::Plugin::SplunkHecOutput do
       "value" => 100,
       "agent" => {
 	      "name"    => "test",
-	      "version" => "1.0.0"
+	      "version" => "1.1.0"
       }
     }
     events = [
