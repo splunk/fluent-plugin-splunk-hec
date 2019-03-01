@@ -386,9 +386,9 @@ It batches all events in a chunk in one request. So you need to configure the `<
 Here are some hints:
 
 * Read through the [fluentd buffer document](https://docs.fluentd.org/v1.0/articles/buffer-section) to understand the buffer configurations.
-* Use `chunk_limit_size` and/or `chunk_limit_records` to define how big a chunk can be. And remeber that all events in a chunk will be sent in one request.
+* Use `chunk_limit_size` and/or `chunk_limit_records` to define how big a chunk can be. And remember that all events in a chunk will be sent in one request.
 * Splunk has a limit on how big the payload of a HEC request can be. And it's defined with `max_content_length` in [the `[http_input]` section of `limits.conf`](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D). In Splunk of version 6.5.0+, the default value is 800MiB, while in versions before 6.5.0, it's just 1MB. Make sure your chunk size won't exceed this limit, or you should change the limit on your Splunk deployment.
-* Sending requests to HEC takes time, so if you flush your fluentd buffer too fast (for example, with a very small `flush_interval`), it's possible that the plugin cannot catch up with the buffer flushing. There are two ways you can handle this situdation, one is to increase the `flush_interval` or use multiple flush threads by setting `flush_thread_count` to a number bigger than 1.
+* Sending requests to HEC takes time, so if you flush your fluentd buffer too fast (for example, with a very small `flush_interval`), it's possible that the plugin cannot catch up with the buffer flushing. There are two ways you can handle this situation, one is to increase the `flush_interval` or use multiple flush threads by setting `flush_thread_count` to a number bigger than 1.
 
 ## License
 
