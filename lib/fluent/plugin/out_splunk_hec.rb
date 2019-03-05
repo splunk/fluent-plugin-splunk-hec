@@ -233,7 +233,7 @@ module Fluent::Plugin
 
     # Format hash using dot-notation
     def dot_it(object, prefix = nil)
-      if object.is_a? Hash
+      if (object.is_a? Hash) && (!object.keys.count.zero?)
         object.map do |key, value|
           if prefix
             dot_it value, "#{prefix}.#{key}"
@@ -265,6 +265,7 @@ module Fluent::Plugin
 	if @extra_fields
 	  payload[:fields] = dot_it @extra_fields.map { |name, field| [name, record[field]] }.to_h
 	  payload[:fields].compact!
+	  payload[:fields].delete_if { |k, v| !(v.is_a? Integer) && v.empty? }
 	  # if a field is already in indexed fields, then remove it from the original event
 	  @extra_fields.values.each { |field| record.delete field }
 	end
