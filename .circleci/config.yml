@@ -93,8 +93,9 @@ jobs:
             .circleci/build_and_push_to_dockerhub.sh
       - run:
           name: Build and push gem to github release
-        command: |
-          .circleci/build_and_push_to_github_release.sh
+          command: |
+            .circleci/build_and_push_to_github_release.sh
+
 
 workflows:
   version: 2
