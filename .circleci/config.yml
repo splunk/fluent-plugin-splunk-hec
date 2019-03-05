@@ -71,10 +71,13 @@ jobs:
           command: |
             .circleci/build_and_push.sh
 
-  release-test:
+  release:
     docker:
       - image: circleci/ruby:2.6.1-node-browsers
     working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: /tmp
     steps:
       - checkout
       - setup_remote_docker:
@@ -83,16 +86,16 @@ jobs:
           name: Install dependencies
           command: |
             .circleci/install_dep.sh
-#      - run:
-#          name: Push gem to rubygems.org
-#          command: |
-#            .circleci/push_gem_to_rubygems.sh
+      - run:
+          name: Push gem to Rubygems.org
+          command: |
+            .circleci/push_gem_to_rubygems.sh
       - run:
           name: Build and push docker image to dockerhub
           command: |
             .circleci/build_and_push_to_dockerhub.sh
       - run:
-          name: Build and push gem to github release
+          name: Upload gem to Github
           command: |
             .circleci/build_and_push_to_github_release.sh
 
@@ -110,7 +113,9 @@ workflows:
           filters:
             branches:
               only: develop
-      - release-test:
+      - release:
+          requires:
+            - test
           filters:
             branches:
               only: master
