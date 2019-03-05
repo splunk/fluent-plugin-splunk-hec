@@ -78,7 +78,6 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp
-    steps:
       - checkout
       - setup_remote_docker:
           reusable: true
