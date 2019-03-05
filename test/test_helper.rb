@@ -1,13 +1,15 @@
-$LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
-$LOAD_PATH.unshift File.expand_path("../lib", __FILE__)
-require "fluent/plugin/out_splunk_hec"
+require 'simplecov'
+SimpleCov.start
 
-require "fluent/test"
-require "fluent/test/driver/output"
-require "fluent/test/helpers"
-require "minitest/autorun"
-require "webmock/minitest"
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+$LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
+require 'fluent/plugin/out_splunk_hec'
 
+require 'fluent/test'
+require 'fluent/test/driver/output'
+require 'fluent/test/helpers'
+require 'minitest/autorun'
+require 'webmock/minitest'
 
 # make assertions from webmock available in minitest/spec
 module Minitest::Expectations
@@ -15,7 +17,7 @@ module Minitest::Expectations
   infect_an_assertion :assert_not_requested, :wont_be_requested, :reverse
 end
 
-TEST_HEC_TOKEN = "some-token".freeze
+TEST_HEC_TOKEN = 'some-token'.freeze
 
 module PluginTestHelper
   def fluentd_conf_for(*lines)
@@ -32,8 +34,9 @@ module PluginTestHelper
   end
 
   def stub_hec_request(endpoint)
-    stub_request(:post, "#{endpoint}/services/collector").
-      with(headers: {"Authorization" => "Splunk #{TEST_HEC_TOKEN}", "User-Agent" => "fluent-plugin-splunk_hec_out/#{Fluent::Plugin::SplunkHecOutput::VERSION}"}).
-      to_return(body: '{"text":"Success","code":0}')
+    stub_request(:post, "#{endpoint}/services/collector")
+      .with(headers: { 'Authorization' => "Splunk #{TEST_HEC_TOKEN}",
+                         'User-Agent' => "fluent-plugin-splunk_hec_out/#{Fluent::Plugin::SplunkHecOutput::VERSION}" })
+      .to_return(body: '{"text":"Success","code":0}')
   end
 end

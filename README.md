@@ -1,4 +1,4 @@
-[ ![Codeship Status for splunk/fluent-plugin-splunk-hec](https://app.codeship.com/projects/7905e540-105f-0136-dde3-2adac7655f3e/status?branch=master)](https://app.codeship.com/projects/282733)
+[![CircleCI](https://circleci.com/gh/git-lfs/git-lfs.svg?style=shield&circle-token=856152c2b02bfd236f54d21e1f581f3e4ebf47ad)](https://circleci.com/gh/splunk/fluent-plugin-splunk-hec)
 # fluent-plugin-splunk-hec
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) over the HEC (HTTP Event Collector) API.
@@ -6,11 +6,9 @@
 ## Installation
 
 ### RubyGems
-
-```
+``` 
 $ gem install fluent-plugin-splunk-hec
 ```
-
 ### Bundler
 
 Add following line to your Gemfile:
@@ -334,6 +332,22 @@ If you want to use a different default formatter, you can add a `<format **>` (o
 
 Defines which formatter to use.
 
+### Net::HTTP::Persistent parameters (optional)
+
+The following parameters can be used for tuning HTTP connections
+
+#### idle_timeout (integer)
+
+The default is 5 seconds. If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection; nil means no timeout. 
+
+#### read_timeout (integer)
+
+The default is nil. The amount of time allowed between reading two chunks from the socket.
+
+#### open_timeout (integer)
+
+The default is nil. The amount of time to wait for a connection to be opened.
+
 ### SSL parameters
 
 There are quite some parameters you can use to configure SSL (for HTTPS protocol).
@@ -372,10 +386,10 @@ It batches all events in a chunk in one request. So you need to configure the `<
 Here are some hints:
 
 * Read through the [fluentd buffer document](https://docs.fluentd.org/v1.0/articles/buffer-section) to understand the buffer configurations.
-* Use `chunk_limit_size` and/or `chunk_limit_records` to define how big a chunk can be. And remeber that all events in a chunk will be sent in one request.
+* Use `chunk_limit_size` and/or `chunk_limit_records` to define how big a chunk can be. And remember that all events in a chunk will be sent in one request.
 * Splunk has a limit on how big the payload of a HEC request can be. And it's defined with `max_content_length` in [the `[http_input]` section of `limits.conf`](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D). In Splunk of version 6.5.0+, the default value is 800MiB, while in versions before 6.5.0, it's just 1MB. Make sure your chunk size won't exceed this limit, or you should change the limit on your Splunk deployment.
-* Sending requests to HEC takes time, so if you flush your fluentd buffer too fast (for example, with a very small `flush_interval`), it's possible that the plugin cannot catch up with the buffer flushing. There are two ways you can handle this situdation, one is to increase the `flush_interval` or use multiple flush threads by setting `flush_thread_count` to a number bigger than 1.
+* Sending requests to HEC takes time, so if you flush your fluentd buffer too fast (for example, with a very small `flush_interval`), it's possible that the plugin cannot catch up with the buffer flushing. There are two ways you can handle this situation, one is to increase the `flush_interval` or use multiple flush threads by setting `flush_thread_count` to a number bigger than 1.
 
 ## License
 
-Please see [LICENSE](LICENSE).
+Please see [LICENSE](LICENSE). 

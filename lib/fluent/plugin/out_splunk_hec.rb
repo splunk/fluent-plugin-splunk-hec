@@ -16,7 +16,7 @@ module Fluent::Plugin
     autoload :VERSION, "fluent/plugin/out_splunk_hec/version"
     autoload :MatchFormatter, "fluent/plugin/out_splunk_hec/match_formatter"
 
-    KEY_FIELDS = %w[index host source sourcetype metric_name metric_value].freeze
+    KEY_FIELDS = %w[index time host source sourcetype metric_name metric_value].freeze
     TAG_PLACEHOLDER = '${tag}'.freeze
 
     MISSING_FIELD = Hash.new { |h, k|
@@ -35,6 +35,15 @@ module Fluent::Plugin
 
     desc 'The HEC token.'
     config_param :hec_token, :string
+
+    desc 'If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection. nil means no timeout.'
+    config_param :idle_timeout, :integer, default: 5
+
+    desc 'The amount of time allowed between reading two chunks from the socket.'
+    config_param :read_timeout, :integer, default: nil
+
+    desc 'The amount of time to wait for a connection to be opened.'
+    config_param :open_timeout, :integer, default: nil
 
     desc 'The path to a file containing a PEM-format CA certificate for this client.'
     config_param :client_cert, :string, default: nil
@@ -59,6 +68,9 @@ module Fluent::Plugin
 
     desc 'The Splunk index to index events. When not set, will be decided by HEC. This is exclusive with `index_key`'
     config_param :index, :string, default: nil
+
+    desc 'Field name to contain Splunk event time. By default will use fluentd\'d time'
+    config_param :time_key, :string, default: nil
 
     desc 'Field name to contain Splunk index name. This is exclusive with `index`.'
     config_param :index_key, :string, default: nil
@@ -113,7 +125,7 @@ module Fluent::Plugin
     config_param :coerce_to_utf8, :bool, :default => true
 
     desc <<~DESC
-    If `coerce_to_utf8` is set to true, any non-UTF-8 character would be
+    If `coerce_to_utf8` is set to true, any not-UTF-8 char's would be
     replaced by the string specified here.
     DESC
     config_param :non_utf8_replacement_string, :string, :default => ' '
@@ -252,9 +264,18 @@ module Fluent::Plugin
 	# From the API reference
 	# http://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTinput#services.2Fcollector
 	# `time` should be a string or unsigned integer.
-	# That's why we use `to_s` here.
+	# That's why we use the to_string function here.
 	time: time.to_f.to_s
       }.tap { |payload|
+
+        if @time
+          time_value = @time.(tag, record)
+          # if no value is found don't override and use fluentd's time
+          if !time_value.nil?
+            payload[:time] = time_value
+          end
+        end
+
 	payload[:index] = @index.(tag, record) if @index
 	payload[:source] = @source.(tag, record) if @source
 	payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
@@ -263,9 +284,8 @@ module Fluent::Plugin
 	%i[host index source sourcetype].each { |f| payload.delete f if payload[f].nil? }
 
 	if @extra_fields
-	  payload[:fields] = dot_it @extra_fields.map { |name, field| [name, record[field]] }.to_h
-	  payload[:fields].compact!
-	  payload[:fields].delete_if { |k, v| !(v.is_a? Integer) && v.empty? }
+    payload[:fields] = dot_it @extra_fields.map { |name, field| [name, record[field]] }.to_h
+    payload[:fields].delete_if { |_k,v| v.nil? }
 	  # if a field is already in indexed fields, then remove it from the original event
 	  @extra_fields.values.each { |field| record.delete field }
 	end
@@ -302,7 +322,7 @@ module Fluent::Plugin
 	  fields.update record
 	end
 
-	fields.compact!
+  fields.delete_if { |_k,v| v.nil? }
 
 	payload[:fields] = convert_to_utf8 fields
 
@@ -331,6 +351,9 @@ module Fluent::Plugin
         c.ca_file = @ca_file
         c.ca_path = @ca_path
         c.ciphers = @ssl_ciphers
+        c.idle_timeout = @idle_timeout
+        c.read_timeout = @read_timeout
+        c.open_timeout = @open_timeout
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
@@ -391,7 +414,7 @@ module Fluent::Plugin
 		     'replace them with spaces, please set "coerce_to_utf8" ' \
 		     'to true.' }
 	  raise
-	end
+  end
       end
     end
   end
