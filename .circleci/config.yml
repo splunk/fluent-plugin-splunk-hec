@@ -83,10 +83,10 @@ jobs:
           name: Install dependencies
           command: |
             .circleci/install_dep.sh
-      - run:
-          name: Push gem to rubygems.org
-          command: |
-            .circleci/push_gem_to_rubygems.sh
+#      - run:
+#          name: Push gem to rubygems.org
+#          command: |
+#            .circleci/push_gem_to_rubygems.sh
       - run:
           name: Build and push docker image to dockerhub
           command: |
@@ -98,7 +98,7 @@ jobs:
 
 workflows:
   version: 2
-  build_test_push:
+  build_test_push_release:
     jobs:
       - build
       - test:
