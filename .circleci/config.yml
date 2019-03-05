@@ -86,10 +86,6 @@ jobs:
           command: |
             .circleci/install_dep.sh
       - run:
-          name: Push gem to Rubygems.org
-          command: |
-            .circleci/push_gem_to_rubygems.sh
-      - run:
           name: Build and push docker image to dockerhub
           command: |
             .circleci/build_and_push_to_dockerhub.sh
