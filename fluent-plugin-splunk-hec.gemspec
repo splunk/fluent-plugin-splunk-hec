@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.3.0'
 
-  spec.add_runtime_dependency 'fluentd', '~> 1.3'
+  spec.add_runtime_dependency 'fluentd', '~> 1.4'
   spec.add_runtime_dependency 'multi_json', '~> 1.13'
   spec.add_runtime_dependency 'net-http-persistent', '~> 3.0'
 
