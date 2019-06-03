@@ -1,4 +1,4 @@
-FROM ruby:2.5.1-slim
+FROM ruby:2.5-alpine
 
 LABEL maintainer="Splunk Inc. <DataEdge@splunk.com>"
 
