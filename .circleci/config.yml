@@ -90,7 +90,7 @@ jobs:
           command: |
             .circleci/build_and_push_to_dockerhub.sh
       - run:
-          name: Upload gem to Github
+          name: Build and push gem to github release
           command: |
             .circleci/build_and_push_to_github_release.sh
 
