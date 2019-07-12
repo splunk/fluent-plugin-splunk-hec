@@ -97,7 +97,7 @@ module Fluent::Plugin
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
     end
-    
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -223,7 +223,7 @@ module Fluent::Plugin
         # That's why we use `to_s` here.
         time: time.to_f.to_s,
         event: 'metric'
-      }.tap do |payload| 
+      }.tap do |payload|
         if @time
           time_value = @time.(tag, record)
           # if no value is found don't override and use fluentd's time
@@ -312,6 +312,8 @@ module Fluent::Plugin
 
       log.debug { "[Response] Chunk: #{dump_unique_id_hex(chunk.unique_id)} Size: #{post.body.bytesize} Response: #{response.inspect} Duration: #{t2 - t1}" }
       process_response(response, post.body)
+
+      return MultiJson.load(response.body).fetch('ackID',nil)
     end
 
     # Encode as UTF-8. If 'coerce_to_utf8' is set to true in the config, any
