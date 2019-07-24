@@ -86,7 +86,7 @@ Besides `source_key` there are also other `*_key` parameters, check the paramete
 
 #### Example 3: Sending metrics
 
-[Metrics](https://docs.splunk.com/Documentation/Splunk/latest/Metrics/Overview) is avaialble since Splunk 7.0.0, you can use this output plugin to send events as metrics to a Splunk metric index by setting `data_type` to "metric".
+[Metrics](https://docs.splunk.com/Documentation/Splunk/latest/Metrics/Overview) is available since Splunk 7.0.0, you can use this output plugin to send events as metrics to a Splunk metric index by setting `data_type` to "metric".
 
 ```
 <match **>
@@ -98,7 +98,7 @@ Besides `source_key` there are also other `*_key` parameters, check the paramete
 </match>
 ```
 
-With this configuration, the plugin will treat each input event as a collection of metrics, i.e. each key-varlue pair in the event is a metric name-value pair. For example, given an input event like
+With this configuration, the plugin will treat each input event as a collection of metrics, i.e. each key-value pair in the event is a metric name-value pair. For example, given an input event like
 
 ```javascript
 {"cpu/usage": 0.5, "cpu/rate": 10, "memory/usage": 100, "memory/rss": 90}

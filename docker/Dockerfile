@@ -17,6 +17,7 @@ RUN set -e \
  && gem install -N fluent-plugin-concat -v "2.2.2" \
  && gem install -N fluent-plugin-prometheus -v "1.3.0" \
  && gem install -N fluent-plugin-jq -v "0.5.1" \
+ && gem install -N fluent-plugin-kubernetes_metadata_filter -v "2.1.2" \
  && gem install -N oj -v "3.5.1" \
  && gem install -N /tmp/*.gem \
  && dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" \

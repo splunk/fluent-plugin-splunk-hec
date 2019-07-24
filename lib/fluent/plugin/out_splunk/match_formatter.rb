@@ -1,11 +1,13 @@
+# frozen_string_literal: true
+
 require 'fluent/match'
 
-class Fluent::Plugin::SplunkHecOutput::MatchFormatter
+class Fluent::Plugin::SplunkOutput::MatchFormatter
   def initialize(pattern, formatter)
     # based on fluentd/lib/fluent/event_router.rb
-    patterns = pattern.split(/\s+/).map { |str|
+    patterns = pattern.split(/\s+/).map do |str|
       Fluent::MatchPattern.create(str)
-    }
+    end
     @pattern =
       if patterns.length == 1
         patterns[0]
