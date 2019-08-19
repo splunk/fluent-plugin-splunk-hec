@@ -285,7 +285,7 @@ module Fluent::Plugin
 
 	if @extra_fields
     payload[:fields] = dot_it @extra_fields.map { |name, field| [name, record[field]] }.to_h
-    payload[:fields].delete_if { |_k,v| v.nil? }
+    payload[:fields].delete_if { |_k,v| v.nil? || !(v.is_a? Integer) && v.empty? }
 	  # if a field is already in indexed fields, then remove it from the original event
 	  @extra_fields.values.each { |field| record.delete field }
 	end
