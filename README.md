@@ -46,7 +46,6 @@ This example is very basic, it just tells the plugin to send events to Splunk HE
 #### Example 2: Configuration example
 
 ```
-// 
 <match **>
 @type splunk_ingest_api
 service_client_identifier xxxxxxxx
@@ -58,6 +57,8 @@ ingest_api_events_endpoint ex: /ingest/mybuild/events
 debug_http false
 </match>
 ```
+
+This example shows the API parameters that give you more control over the plugin beaviors.
 
 #### Example 3: Overwrite HEC defaults
 
@@ -429,6 +430,29 @@ Here are some hints:
 * Use `chunk_limit_size` and/or `chunk_limit_records` to define how big a chunk can be. And remember that all events in a chunk will be sent in one request.
 * Splunk has a limit on how big the payload of a HEC request can be. And it's defined with `max_content_length` in [the `[http_input]` section of `limits.conf`](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D). In Splunk of version 6.5.0+, the default value is 800MiB, while in versions before 6.5.0, it's just 1MB. Make sure your chunk size won't exceed this limit, or you should change the limit on your Splunk deployment.
 * Sending requests to HEC takes time, so if you flush your fluentd buffer too fast (for example, with a very small `flush_interval`), it's possible that the plugin cannot catch up with the buffer flushing. There are two ways you can handle this situation, one is to increase the `flush_interval` or use multiple flush threads by setting `flush_thread_count` to a number bigger than 1.
+
+## Ingest API parameters
+
+### service_client_identifier: (String) 
+Splunk uses the client identifier to make authorized requests to the ingest API. 
+
+### service_client_secret_key: (String) 
+The client identifier uses this authorization to make requests to the ingest API. 
+
+### token_endpoint: (String) 
+This value indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API. 
+
+### ingest_api_host: (String) 
+Indicates which url/hostname to use for requests to the ingest API. 
+
+### ingest_api_tenant: (String) 
+Indicates which tenant Splnk should use for requests to the ingest API. 
+
+### ingest_api_events_endpoint: (String) 
+Indicates which endpoint to use for requests to the ingest API. 
+
+### debug_http: (Boolean) 
+Set to `True` if you want to debug requests and responses to ingest API. Default is `false`.
 
 ## License
 
