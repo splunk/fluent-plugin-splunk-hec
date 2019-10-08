@@ -1,7 +1,9 @@
 [![CircleCI](https://circleci.com/gh/git-lfs/git-lfs.svg?style=shield&circle-token=856152c2b02bfd236f54d21e1f581f3e4ebf47ad)](https://circleci.com/gh/splunk/fluent-plugin-splunk-hec)
 # fluent-plugin-splunk-hec
 
-[Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) over the HEC (HTTP Event Collector) API. 
+[Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) in 2 modes:<br/>
+1) Via Splunk's [HEC (HTTP Event Collector) API](http://dev.splunk.com/view/event-collector/SP-CAAAE7F)<br/> 
+2) Via the [Splunk Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
 
 ## Installation
 
@@ -24,8 +26,6 @@ $ bundle
 ```
 
 ## Configuration
-
-# Configuration for Ingest API
 
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
 
@@ -50,15 +50,15 @@ This example is very basic, it just tells the plugin to send events to Splunk HE
 @type splunk_ingest_api
 service_client_identifier xxxxxxxx
 service_client_secret_key xxxx-xxxxx
-token_endpoint ex: /system/identity/v2beta1/token
-ingest_api_host ex: api.url.splunk.com
-ingest_api_tenant ex: mytenant
-ingest_api_events_endpoint ex: /ingest/mybuild/events
+token_endpoint /system/identity/v2beta1/token
+ingest_api_host api.url.splunk.com
+ingest_api_tenant mytenant
+ingest_api_events_endpoint /ingest/mybuild/events
 debug_http false
 </match>
 ```
 
-This example shows the API parameters that give you more control over the plugin beaviors.
+This example shows the configuration to be used for sending events to ingest API. This configuration shows how to use `service_client_identifier`, `service_client_secret_key` to get token from `token_endpoint` and send events to `ingest_api_host` for the tenant `ingest_api_tenant` at the endpoint `ingest_api_events_endpoint`. The `debug_http` flag indicates whether the user wants to print debug logs to stdout.
 
 #### Example 3: Overwrite HEC defaults
 
@@ -96,7 +96,7 @@ In this example (in order to keep it concise, we just omitted the repeating para
 ```
 Then the source for this event will be "/var/log/splunk.log". And the "file\_path" field will be removed from the input event, so what you will eventually get ingested in Splunk is:
 ```javascript
-{"message": "This is an exmaple.", "level": "info"}
+{"message": "This is an example.", "level": "info"}
 ```
 If you want to keep "file\_path" in the event, you can use `keep_keys`.
 
@@ -147,11 +147,13 @@ You should change the configuration to
 
 All other properties of the input (in this example, "app"), will be sent as dimensions of the metric. You can use the `<fields>` section to customize the dimensions.
 
-### Parameters
+### Type of plugin
 
 #### @type
 
-This value must always be set to `splunk_hec`.
+This value must be set to `splunk_hec` when using HEC API and to `splunk_ingest_api` when using the ingest API. Only one type either `splunk_hec` or `splunk_ingest_api` is expected to be used when configuring this plugin.
+
+### Parameters for `splunk_hec`
 
 #### protocol (enum) (optional)
 
@@ -170,9 +172,56 @@ The port number for the HEC token or the HEC load balancer. The default value is
 
 Identifier for the HEC token.
 
-### fields (init) (optional)
+### metrics_from_event (bool) (optional)
 
-Lets you specify the index-time fields for the event data type, or metric dimensions for the metric data type. Null value fields are removed.
+When `data_type` is set to "metric", the ingest API will treat every key-value pair in the input event as a metric name-value pair. Set `metrics_from_event` to `false` to disable this behavior and use `metric_name_key` and `metric_value_key` to define metrics. The default value is `true`.
+
+### metric_name_key (string) (optional)
+
+Field name that contains the metric name. This parameter only works in conjunction with the `metrics_from_event` paramter. When this prameter is set, the `metrics_from_event` parameter is automatically set to `false`.
+
+### metric_value_key (string) (optional)
+
+Field name that contains the metric value, this parameter is required when `metric_name_key` is configured.
+
+### coerce_to_utf8 (bool) (optional)
+
+Indicates whether to allow non-UTF-8 characters in user logs. If set to `true`, any non-UTF-8 character is replaced by the string specified in `non_utf8_replacement_string`. If set to `false`, the Ingest API errors out any non-UTF-8 characters. This parameter is set to `true` by default.
+
+### non_utf8_replacement_string (string) (optional)
+
+If `coerce_to_utf8` is set to `true`, any non-UTF-8 character is replaced by the string you specify in this parameter. The parameter is set to `' '` by default.
+
+### Parameters for `splunk_ingest_api`
+
+### service_client_identifier: (optional) (string) 
+
+Splunk uses the client identifier to make authorized requests to the ingest API.
+
+### service_client_secret_key: (string) 
+
+The client identifier uses this authorization to make requests to the ingest API.
+
+### token_endpoint: (string) 
+
+This value indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API.
+
+### ingest_api_host: (string) 
+
+Indicates which url/hostname to use for requests to the ingest API.
+
+### ingest_api_tenant: (string) 
+
+Indicates which tenant Splunk should use for requests to the ingest API.
+
+### ingest_api_events_endpoint: (string) 
+
+Indicates which endpoint to use for requests to the ingest API.
+
+### debug_http: (bool) 
+Set to True if you want to debug requests and responses to ingest API. Default is false.
+
+### Parameters for both `splunk_hec` and `splunk_ingest_api`
 
 ### index (string) (optional)
 
@@ -194,10 +243,6 @@ If the parameter is not set, the default value is the hostname of the machine ru
 Key for the host location. This parameter only works in conjunction with the `host` parameter. If the `host`
 parameter is not set, this parameter is ignored.
 
-### keep_keys (boolean) (Optional)
-
-When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, and `metric_value_key` are saved in the original event.
-
 ### source (string) (optional)
 
 The source field for events. If this parameter is not set, the source will be decided by HEC. This
@@ -216,59 +261,19 @@ conjunction with the `sourcetype_key` parameter.
 
 Field name that contains the sourcetype. This parameter only works in conjunction with the `sourcetype` parameter.
 
-### metrics_from_event (bool) (optional)
+### fields (init) (optional)
 
-When `data_type` is set to "metric", the ingest API will treat every key-value pair in the input event as a metric name-value pair. Set `metrics_from_event` to `false` to disable this behavior and use `metric_name_key` and `metric_value_key` to define metrics. The default value is `true`.
+Lets you specify the index-time fields for the event data type, or metric dimensions for the metric data type. Null value fields are removed.
 
-### metric_name_key (string) (optional)
-
-Field name that contains the metric name. This parameter only works in conjunction with the `metrics_from_event` paramter. When this prameter is set, the `metrics_from_event` parameter is automatically set to `false`.
-
-### metric_value_key (string) (optional)
-
-Field name that contains the metric value, this parameter is required when `metric_name_key` is configured.
-
-### keep_keys (bool) (optional)
+### keep_keys (boolean) (Optional)
 
 By default, all the fields used by the `*_key` parameters are removed from the original input events. To change this behavior, set this parameter to `true`. This parameter is set to `false` by default.
-
-### service_client_identifier: (optional) (String) 
-
-Splunk uses the client identifier to make authorized requests to the ingest API.
-
-### service_client_secret_key: (String) 
-
-The client identifier uses this authorization to make requests to the ingest API.
-
-### token_endpoint: (String) 
-
-This value indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API.
-
-### ingest_api_host: (String) 
-
-Indicates which url/hostname to use for requests to the ingest API.
-
-### ingest_api_tenant: (String) 
-
-Indicates which tenant Splnk should use for requests to the ingest API.
-
-### ingest_api_events_endpoint: (String) 
-
-Indicates which endpoint to use for requests to the ingest API.
-
-### coerce_to_utf8 (bool) (optional)
-
-Indicates whether to allow non-UTF-8 characters in user logs. If set to `true`, any non-UTF-8 character is replaced by the string specified in `non_utf8_replacement_string`. If set to `false`, the Ingest API errors out any non-UTF-8 characters. This parameter is set to `true` by default.
-
-### non_utf8_replacement_string (string) (optional)
-
-If `coerce_to_utf8` is set to `true`, any non-UTF-8 character is replaced by the string you specify in this parameter. The parameter is set to `' '` by default.
+When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, and `metric_value_key` are saved in the original event.
 
 ### &lt;fields&gt; section (optional) (single)
 
 Depending on the value of `data_type` parameter, the parameters inside the `<fields>` section have different meanings. Despite the meaning, the syntax for parameters is unique.
 
-debug_http: (Boolean) Set to True if you want to debug requests and responses to ingest API. Default is false.
 #### When `data_type` is `event`
 
 In this case, parameters inside `<fields>` are used as indexed fields and removed from the original input events. Please see the "Add a "fields" property at the top JSON level" [here](http://dev.splunk.com/view/event-collector/SP-CAAAFB6) for details. Given we have configuration like
@@ -430,29 +435,6 @@ Here are some hints:
 * Use `chunk_limit_size` and/or `chunk_limit_records` to define how big a chunk can be. And remember that all events in a chunk will be sent in one request.
 * Splunk has a limit on how big the payload of a HEC request can be. And it's defined with `max_content_length` in [the `[http_input]` section of `limits.conf`](https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D). In Splunk of version 6.5.0+, the default value is 800MiB, while in versions before 6.5.0, it's just 1MB. Make sure your chunk size won't exceed this limit, or you should change the limit on your Splunk deployment.
 * Sending requests to HEC takes time, so if you flush your fluentd buffer too fast (for example, with a very small `flush_interval`), it's possible that the plugin cannot catch up with the buffer flushing. There are two ways you can handle this situation, one is to increase the `flush_interval` or use multiple flush threads by setting `flush_thread_count` to a number bigger than 1.
-
-## Ingest API parameters
-
-### service_client_identifier: (String) 
-Splunk uses the client identifier to make authorized requests to the ingest API. 
-
-### service_client_secret_key: (String) 
-The client identifier uses this authorization to make requests to the ingest API. 
-
-### token_endpoint: (String) 
-This value indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API. 
-
-### ingest_api_host: (String) 
-Indicates which url/hostname to use for requests to the ingest API. 
-
-### ingest_api_tenant: (String) 
-Indicates which tenant Splnk should use for requests to the ingest API. 
-
-### ingest_api_events_endpoint: (String) 
-Indicates which endpoint to use for requests to the ingest API. 
-
-### debug_http: (Boolean) 
-Set to `True` if you want to debug requests and responses to ingest API. Default is `false`.
 
 ## License
 
