@@ -25,11 +25,42 @@ $ bundle
 
 ## Configuration
 
+# Configuration for Ingest API
+
+See the examples following this section for how to use these parameters in real world configurations.
+
+Set the following API configuration fields to configure the Ingest API:
+
+serviceClientIdentifier: (String) Splunk uses the client identifier to make authorized requests to the ingest API.
+serviceClientSecretKey: (String) The client identifier uses this authorization to make requests to the ingest API.
+tokenEndpoint: (String) This valie indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API.
+ingestAPIHost: (String) Indicates which url/hostname to use for requests to the ingest API.
+tenant: (String) Indicates which tenant Splnk should use for requests to the ingest API.
+eventsEndpoint: (String) Indicates which endpoint to use forrequests to the ingest API.
+debugIngestAPI: (Boolean) Set to True if you want to debug requests and responses to ingest API. Default is false.
+
+
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
 
 ### Examples
 
-#### Example 1: Minimum Configs
+#### Example 1: Configuration example
+
+```
+// 
+<match **>
+@type splunk_ingest_api
+service_client_identifier xxxxxxxx
+service_client_secret_key xxxx-xxxxx
+token_endpoint ex: /system/identity/v2beta1/token
+ingest_api_host ex: api.url.splunk.com
+ingest_api_tenant ex: mytenant
+ingest_api_events_endpoint ex: /ingest/mybuild/events
+debug_http false
+</match>
+```
+
+#### Example 2: Minimum Configuration
 
 ```
 <match **>
@@ -42,7 +73,7 @@ $ bundle
 
 This example is very basic, it just tells the plugin to send events to Splunk HEC on `https://12.34.56.78:8088` (https is the default protocol), using the HEC token `00000000-0000-0000-0000-000000000000`. It will use whatever index, source, sourcetype are configured in HEC. And the `host` of each event is the hostname of the machine which running fluentd.
 
-#### Example 2: Overwrite HEC defaults
+#### Example 3: Overwrite HEC defaults
 
 ```
 <match **>
@@ -72,11 +103,11 @@ Sometimes you want to use the values from the input event for these parameters, 
 </match>
 ```
 
-In the second example (in order to keep it concise, we just omitted the repeating parameters, and we will keep doing so in the following examples), it uses the `source_key` config to set the source of event to the value of the event's `file_path` field. Given an input event like
+In this example (in order to keep it concise, we just omitted the repeating parameters, and we will keep doing so in the following examples), it uses the `source_key` config to set the source of event to the value of the event's `file_path` field. Given an input event like
 ```javascript
 {"file_path": "/var/log/splunk.log", "message": "This is an exmaple.", "level": "info"}
 ```
-Then the source for this event will be "/var/log/splunk.log". And the "file\_path" field will be removed from the input event, so what you will eventually get ingested in Splunk is
+Then the source for this event will be "/var/log/splunk.log". And the "file\_path" field will be removed from the input event, so what you will eventually get ingested in Splunk is:
 ```javascript
 {"message": "This is an exmaple.", "level": "info"}
 ```
@@ -84,7 +115,7 @@ If you want to keep "file\_path" in the event, you can use `keep_keys`.
 
 Besides `source_key` there are also other `*_key` parameters, check the parameters details below.
 
-#### Example 3: Sending metrics
+#### Example 4: Sending metrics
 
 [Metrics](https://docs.splunk.com/Documentation/Splunk/latest/Metrics/Overview) is available since Splunk 7.0.0, you can use this output plugin to send events as metrics to a Splunk metric index by setting `data_type` to "metric".
 
@@ -133,103 +164,102 @@ All other properties of the input (in this example, "app"), will be sent as dime
 
 #### @type
 
-This value must be `splunk_hec`.
+This value must always be set to `splunk_hec`.
 
 #### protocol (enum) (optional)
 
-Protocol to use to call HEC API.
-
-Available values: http, https
-
-Default value: `https`.
+This is the protocol to use for calling the HEC API. Available values are: http, https. This parameter is 
+set to `https` by default.
 
 ### hec_host (string) (required)
 
-The hostname/IP to HEC, or HEC load balancer.
+The hostname/IP for the HEC token or the HEC load balancer.
 
 ### hec_port (integer) (optional)
 
-The port number to HEC, or HEC load balancer.
-
-Default value: `8088`.
+The port number for the HEC token or the HEC load balancer. The default value: `8088`.
 
 ### hec_token (string) (required)
 
-The HEC token.
+Identifier for the HEC token.
+
+### fields (init) (optional)
+
+Lets you specify the index-time fields for the event data type, or metric dimensions for the metric data type. Null value fields are removed.
 
 ### index (string) (optional)
 
-The Splunk index to index events. When not set, will be decided by HEC. This is exclusive with `index_key`.
+Identifier for the Splunk index to be used for indexing events. If this parameter is not set, 
+the indexer is chosen by HEC. This parameter only works in conjunction with the `index_key` parameter.
 
 ### index_key (string) (optional)
 
-Field name to contain Splunk index name. This is exclusive with `index`.
+The field name that contains the Splunk index name. This parameter works in conjunction with `index` and will 
+not work if the `index` paramter is not set.
 
 ### host (string) (optional)
 
-The host field for events. This is exclusive with `host_key`.
-
-Default value: the hostname of the host machine.
+The host location for events. This parameter only works in conjunction with the `host_key` parameter. 
+If the parameter is not set, the default value is the hostname of the machine runnning fluentd.
 
 ### host_key (string) (optional)
 
-Field name to contain host. This is exclusive with `host`.
+Key for the host location. This parameter only works in conjunction with the `host` parameter. If the `host`
+parameter is not set, this parameter is ignored.
+
+### keep_keys (boolean) (Optional)
+
+When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, and `metric_value_key` are saved in the original event.
 
 ### source (string) (optional)
 
-The source field for events, when not set, will be decided by HEC. This is exclusive with `source_key`.
+The source field for events. If this parameter is not set, the source will be decided by HEC. This
+parameter only works in conjunction with the `source_key` parameter.
 
 ### source_key (string) (optional)
 
-Field name to contain source. This is exclusive with `source`.
+Field name to contain source. This parameter only works in conjunction with the `source` parameter.
 
 ### sourcetype (string) (optional)
 
-The sourcetype field for events, when not set, will be decided by HEC. This is exclusive with `sourcetype_key`.
+The sourcetype field for events. When not set, the sourcetype is decided by HEC. This parameter only works in 
+conjunction with the `sourcetype_key` parameter.
 
 ### sourcetype_key (string) (optional)
 
-Field name to contain sourcetype. This is exclusive with `sourcetype`.
+Field name that contains the sourcetype. This parameter only works in conjunction with the `sourcetype` parameter.
 
 ### metrics_from_event (bool) (optional)
 
-When `data_type` is set to "metric", by default it will treat every key-value pair in the input event as a metric name-value pair. Set `metrics_from_event` to `false` to disable this behavior and use `metric_name_key` and `metric_value_key` to define metrics.
-
-Default value: `true`.
+When `data_type` is set to "metric", the ingest API will treat every key-value pair in the input event as a metric name-value pair. Set `metrics_from_event` to `false` to disable this behavior and use `metric_name_key` and `metric_value_key` to define metrics. The default value is `true`.
 
 ### metric_name_key (string) (optional)
 
-Field name to contain metric name. This is exclusive with `metrics_from_event`, when this is set, `metrics_from_event` will be set to `false`.
+Field name that contains the metric name. This parameter only works in conjunction with the `metrics_from_event` paramter. When this prameter is set, the `metrics_from_event` parameter is automatically set to `false`.
 
 ### metric_value_key (string) (optional)
 
-Field name to contain metric value, this is required when `metric_name_key` is set.
+Field name that contains the metric value, this parameter is required when `metric_name_key` is configured.
 
 ### keep_keys (bool) (optional)
 
-By default, all the fields used by the `*_key` parameters will be removed from the original input events. To change this behavior, set this parameter to `true`.
-
-Default value: `true`.
+By default, all the fields used by the `*_key` parameters are removed from the original input events. To change this behavior, set this parameter to `true`. This parameter is set to `false` by default.
 
 ### coerce_to_utf8 (bool) (optional)
 
-Whether to allow non-UTF-8 characters in user logs. If set to true, any non-UTF-8 character would be replaced by the string specified by `non_utf8_replacement_string`. If set to false, any non-UTF-8 character would trigger the plugin to error out.
-
-Default value: `true`.
+Indicates whether to allow non-UTF-8 characters in user logs. If set to `true`, any non-UTF-8 character is replaced by the string specified in `non_utf8_replacement_string`. If set to `false`, the Ingest API errors out any non-UTF-8 characters. This parameter is set to `true` by default.
 
 ### non_utf8_replacement_string (string) (optional)
 
-If `coerce_to_utf8` is set to true, any non-UTF-8 character would be replaced by the string specified here.
-
-Default value: `' '`.
+If `coerce_to_utf8` is set to `true`, any non-UTF-8 character is replaced by the string you specify in this parameter. The parameter is set to `' '` by default.
 
 ### &lt;fields&gt; section (optional) (single)
 
-Depending on the value of `data_type` parameter, the parameters inside `<fields>` section have different meanings. Despite the meaning, the syntax for parameters is unique.
+Depending on the value of `data_type` parameter, the parameters inside the `<fields>` section have different meanings. Despite the meaning, the syntax for parameters is unique.
 
 #### When `data_type` is `event`
 
-In this case, parameters inside `<fields>` will be used as indexed fields. And these fields will be removed from the original input events. Please see the "Add a "fields" property at the top JSON level" [here](http://dev.splunk.com/view/event-collector/SP-CAAAFB6) for details. Given we have configuration like
+In this case, parameters inside `<fields>` are used as indexed fields and removed from the original input events. Please see the "Add a "fields" property at the top JSON level" [here](http://dev.splunk.com/view/event-collector/SP-CAAAFB6) for details. Given we have configuration like
 
 ```
 <match **>
@@ -273,7 +303,7 @@ If a parameter has just a key, it means its value is exactly the same as the key
 
 #### When `data_type` is `metric`
 
-For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` is not presented, the original input event will be used as dimensions. If an empty `<fields></fields>` is presented, no dimension will be sent. For example, given configuration like
+For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` is not presented, the original input event will be used as dimensions. If an empty `<fields></fields>` is presented, no dimension is sent. For example, given the following configuration: 
 
 ```
 <match **>
@@ -291,22 +321,22 @@ For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` 
 </match>
 ```
 
-and an input event like
+and the following input event:
 
 ```javascript
 {"application": "webServer", "file": "server.rb", "value": 100, "status": "OK", "message": "Normal", "name": "CPU Usage"}
 ```
 
-Then, a metric of "CPU Usage" with value=100, along with 3 dimensions file="server.rb", status="OK", and app="webServer" will be sent to Splunk.
+Then, a metric of "CPU Usage" with value=100, along with 3 dimensions file="server.rb", status="OK", and app="webServer" are sent to Splunk.
 
 ### &lt;format&gt; section (optional) (multiple)
 
-The `<format>` section let us define which formatter to use to format events.
+The `<format>` section let you define which formatter to use to format events.
 By default, it uses [the `json` formatter](https://docs.fluentd.org/v1.0/articles/formatter_jso://docs.fluentd.org/v1.0/articles/formatter_json).
 
-Besides the `@type` parameter, you should define all other parameters for the formatter inside this section.
+Besides the `@type` parameter, you should define the other parameters for the formatter inside this section.
 
-Multiple `<format>` sections can be defined to use different formatters for different tags. Each `<format>` section accepts an argument just like the `<match>` section does, to define tag matching. But default, every event will be formatted with `json`. For example:
+Multiple `<format>` sections can be defined to use different formatters for different tags. Each `<format>` section accepts an argument just like the `<match>` section does to define tag matching. By default, every event is formatted with `json`. For example:
 
 ```
 <match **>
@@ -324,34 +354,35 @@ Multiple `<format>` sections can be defined to use different formatters for diff
   </format>
 ```
 
-In this example, it will format events with tags which start with `sometag.` with the `single_value` formatter, and format events with tags `some.othertag` with the `csv` formatter, and format all other events with the `json` formatter (the default formatter).
+This example: 
+- Formats events with tags that start with `sometag.` with the `single_value` formatter
+- Formats events with tags `some.othertag` with the `csv` formatter
+- Formats all other events with the `json` formatter (the default formatter)
 
 If you want to use a different default formatter, you can add a `<format **>` (or `<format>`) section.
 
 #### @type (string) (required)
 
-Defines which formatter to use.
+Specifies which formatter to use.
 
 ### Net::HTTP::Persistent parameters (optional)
 
-The following parameters can be used for tuning HTTP connections
+The following parameters can be used for tuning HTTP connections:
 
 #### idle_timeout (integer)
 
-The default is 5 seconds. If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection; nil means no timeout. 
+The default is five seconds. If a connection has not been used for five seconds, it is automatically reset at next use, in order to avoid attempting to send to a closed connection. Specifiy `nil` to prohibit any timeouts. 
 
 #### read_timeout (integer)
-
-The default is nil. The amount of time allowed between reading two chunks from the socket.
+The amount of time allowed between reading two chunks from the socket. The default value is `nil`, which means no timeout. 
 
 #### open_timeout (integer)
 
-The default is nil. The amount of time to wait for a connection to be opened.
+The amount of time to wait for a connection to be opened. The default is `nil`, which means no timeout.
 
 ### SSL parameters
 
-There are quite some parameters you can use to configure SSL (for HTTPS protocol).
-All these parameters are optional.
+The following optional parameters let you configure SSL for HTTPS protocol.
 
 #### client_cert (string)
 
@@ -375,9 +406,7 @@ List of SSl ciphers allowed.
 
 #### insecure_ssl (bool)
 
-Indicates if insecure SSL connection is allowed, i.e. do not verify the server's certificate.
-
-Default value: `false`.
+Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default.
 
 ## About Buffer
 
