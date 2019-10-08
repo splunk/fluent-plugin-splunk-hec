@@ -27,24 +27,23 @@ $ bundle
 
 # Configuration for Ingest API
 
-See the examples following this section for how to use these parameters in real world configurations.
-
-Set the following API configuration fields to configure the Ingest API:
-
-serviceClientIdentifier: (String) Splunk uses the client identifier to make authorized requests to the ingest API.
-serviceClientSecretKey: (String) The client identifier uses this authorization to make requests to the ingest API.
-tokenEndpoint: (String) This valie indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API.
-ingestAPIHost: (String) Indicates which url/hostname to use for requests to the ingest API.
-tenant: (String) Indicates which tenant Splnk should use for requests to the ingest API.
-eventsEndpoint: (String) Indicates which endpoint to use forrequests to the ingest API.
-debugIngestAPI: (Boolean) Set to True if you want to debug requests and responses to ingest API. Default is false.
-
-
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
 
-### Examples
+#### Example 1: Minimum Configuration
 
-#### Example 1: Configuration example
+```
+<match **>
+  @type splunk_hec
+  hec_host 12.34.56.78
+  hec_port 8088
+  hec_token 00000000-0000-0000-0000-000000000000
+</match>
+```
+
+This example is very basic, it just tells the plugin to send events to Splunk HEC on `https://12.34.56.78:8088` (https is the default protocol), using the HEC token `00000000-0000-0000-0000-000000000000`. It will use whatever index, source, sourcetype are configured in HEC. And the `host` of each event is the hostname of the machine which running fluentd.
+
+
+#### Example 2: Configuration example
 
 ```
 // 
@@ -59,19 +58,6 @@ ingest_api_events_endpoint ex: /ingest/mybuild/events
 debug_http false
 </match>
 ```
-
-#### Example 2: Minimum Configuration
-
-```
-<match **>
-  @type splunk_hec
-  hec_host 12.34.56.78
-  hec_port 8088
-  hec_token 00000000-0000-0000-0000-000000000000
-</match>
-```
-
-This example is very basic, it just tells the plugin to send events to Splunk HEC on `https://12.34.56.78:8088` (https is the default protocol), using the HEC token `00000000-0000-0000-0000-000000000000`. It will use whatever index, source, sourcetype are configured in HEC. And the `host` of each event is the hostname of the machine which running fluentd.
 
 #### Example 3: Overwrite HEC defaults
 
@@ -177,7 +163,7 @@ The hostname/IP for the HEC token or the HEC load balancer.
 
 ### hec_port (integer) (optional)
 
-The port number for the HEC token or the HEC load balancer. The default value: `8088`.
+The port number for the HEC token or the HEC load balancer. The default value is `8088`.
 
 ### hec_token (string) (required)
 
@@ -195,7 +181,7 @@ the indexer is chosen by HEC. This parameter only works in conjunction with the 
 ### index_key (string) (optional)
 
 The field name that contains the Splunk index name. This parameter works in conjunction with `index` and will 
-not work if the `index` paramter is not set.
+not work if the `index` parameter is not set.
 
 ### host (string) (optional)
 
@@ -245,6 +231,30 @@ Field name that contains the metric value, this parameter is required when `metr
 
 By default, all the fields used by the `*_key` parameters are removed from the original input events. To change this behavior, set this parameter to `true`. This parameter is set to `false` by default.
 
+### service_client_identifier: (optional) (String) 
+
+Splunk uses the client identifier to make authorized requests to the ingest API.
+
+### service_client_secret_key: (String) 
+
+The client identifier uses this authorization to make requests to the ingest API.
+
+### token_endpoint: (String) 
+
+This value indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API.
+
+### ingest_api_host: (String) 
+
+Indicates which url/hostname to use for requests to the ingest API.
+
+### ingest_api_tenant: (String) 
+
+Indicates which tenant Splnk should use for requests to the ingest API.
+
+### ingest_api_events_endpoint: (String) 
+
+Indicates which endpoint to use for requests to the ingest API.
+
 ### coerce_to_utf8 (bool) (optional)
 
 Indicates whether to allow non-UTF-8 characters in user logs. If set to `true`, any non-UTF-8 character is replaced by the string specified in `non_utf8_replacement_string`. If set to `false`, the Ingest API errors out any non-UTF-8 characters. This parameter is set to `true` by default.
@@ -257,6 +267,7 @@ If `coerce_to_utf8` is set to `true`, any non-UTF-8 character is replaced by the
 
 Depending on the value of `data_type` parameter, the parameters inside the `<fields>` section have different meanings. Despite the meaning, the syntax for parameters is unique.
 
+debug_http: (Boolean) Set to True if you want to debug requests and responses to ingest API. Default is false.
 #### When `data_type` is `event`
 
 In this case, parameters inside `<fields>` are used as indexed fields and removed from the original input events. Please see the "Add a "fields" property at the top JSON level" [here](http://dev.splunk.com/view/event-collector/SP-CAAAFB6) for details. Given we have configuration like
