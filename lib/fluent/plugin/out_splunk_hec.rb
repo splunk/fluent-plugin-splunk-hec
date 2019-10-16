@@ -71,6 +71,9 @@ module Fluent::Plugin
     desc 'The Splunk index to index events. When not set, will be decided by HEC. This is exclusive with `index_key`'
     config_param :index, :string, default: nil
 
+    desc 'Field name to contain Splunk event time. By default will use fluentd\'d time'
+    config_param :time_key, :string, default: nil
+
     desc 'Field name to contain Splunk index name. This is exclusive with `index`.'
     config_param :index_key, :string, default: nil
 
@@ -90,7 +93,7 @@ module Fluent::Plugin
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
     end
-    
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -214,7 +217,7 @@ module Fluent::Plugin
         # That's why we use `to_s` here.
         time: time.to_f.to_s,
         event: 'metric'
-      }.tap do |payload| 
+      }.tap do |payload|
         if @time
           time_value = @time.(tag, record)
           # if no value is found don't override and use fluentd's time

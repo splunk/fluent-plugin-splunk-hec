@@ -103,7 +103,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp
-      - checkout          
+      - checkout
       - setup_remote_docker:
           reusable: true
       - run:
