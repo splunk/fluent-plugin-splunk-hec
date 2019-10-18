@@ -1,4 +1,4 @@
-FROM fluent/fluentd:v1.7-debian-1
+FROM fluent/fluentd:v1.4-debian
 LABEL maintainer="Splunk Inc. <DataEdge@splunk.com>"
 # Use root account to use apt
 USER root

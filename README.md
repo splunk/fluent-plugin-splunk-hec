@@ -25,6 +25,17 @@ And then execute:
 $ bundle
 ```
 
+## Build gem file
+```
+gem build fluent-plugin-splunk-hec.gemspec
+```
+
+## Build Docker
+First build the gem file and put it in the docker directory, then execute:
+```
+docker build . -t fluentd-splunk-hec
+```
+
 ## Configuration
 
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
