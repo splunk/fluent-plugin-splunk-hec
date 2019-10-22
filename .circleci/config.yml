@@ -118,25 +118,30 @@ workflows:
       - build:
           filters:
             branches:
-              ignore: /^release\/.*/
+              ignore: 
+                - /^release\/.*/
+                - master
       - test:
           requires:
             - build
-      - push:
-          requires:
-            - test
-          filters:
-            branches:
-              only: develop
+      # - push:
+      #     requires:
+      #       - test
+      #     filters:
+      #       branches:
+      #         only: develop
       - check_version:
           requires:
-            - push
+            - test
   release:
     jobs:
       - build:
           filters:
             branches:
               only: master
+      - test:
+          requires:
+            - build
       - release:
           requires:
-          - build
+          - test
