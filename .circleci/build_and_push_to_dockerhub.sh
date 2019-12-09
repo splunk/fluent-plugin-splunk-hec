@@ -2,6 +2,9 @@
 set -e
 echo "Building docker image..."
 cp /tmp/pkg/fluent-plugin-splunk-hec-*.gem docker
+echo "Copying licenses to be included in the docker image..."
+mkdir licenses
+cp -rp LICENSE licenses/
 VERSION=`cat VERSION`
 docker build --no-cache -t splunk/fluent-plugin-splunk-hec:ci ./docker
 docker tag splunk/fluent-plugin-splunk-hec:ci splunk/${DOCKERHUB_REPO_NAME}:${VERSION}
