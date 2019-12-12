@@ -3,7 +3,7 @@
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) in 2 modes:<br/>
 1) Via Splunk's [HEC (HTTP Event Collector) API](http://dev.splunk.com/view/event-collector/SP-CAAAE7F)<br/> 
-2) Via the [Splunk Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
+2) Via the Splunk Cloud Services (SCS) [Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
 
 ## Installation
 
@@ -29,7 +29,7 @@ $ bundle
 
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
 
-#### Example 1: Minimum Configuration
+#### Example 1: Minimum HEC Configuration
 
 ```
 <match **>
@@ -43,17 +43,18 @@ $ bundle
 This example is very basic, it just tells the plugin to send events to Splunk HEC on `https://12.34.56.78:8088` (https is the default protocol), using the HEC token `00000000-0000-0000-0000-000000000000`. It will use whatever index, source, sourcetype are configured in HEC. And the `host` of each event is the hostname of the machine which running fluentd.
 
 
-#### Example 2: Configuration example
+#### Example 2: SCS Ingest Configuration example
 
 ```
 <match **>
 @type splunk_ingest_api
 service_client_identifier xxxxxxxx
 service_client_secret_key xxxx-xxxxx
-token_endpoint /system/identity/v2beta1/token
-ingest_api_host api.url.splunk.com
-ingest_api_tenant mytenant
-ingest_api_events_endpoint /ingest/mybuild/events
+token_endpoint /token
+ingest_auth_host auth.scp.splunk.com
+ingest_api_host api.scp.splunk.com
+ingest_api_tenant <mytenant>
+ingest_api_events_endpoint /<mytenant>/ingest/v1beta2/events
 debug_http false
 </match>
 ```

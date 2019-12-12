@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fluent/env'
 require 'fluent/output'
 require 'fluent/plugin/output'
 require 'fluent/plugin/formatter'

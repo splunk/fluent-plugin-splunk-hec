@@ -6,8 +6,8 @@ describe Fluent::Plugin::SplunkIngestApiOutput do
   include Fluent::Test::Helpers
   include PluginTestHelper
 
-  INGEST_API_ENDPOINT = 'https://api.splunkbeta.com/tenant_name/ingest/v1beta2/events'
-  AUTH_TOKEN_ENDPOINT = 'https://api.splunkbeta.com/system/identity/v1/token'
+  INGEST_API_ENDPOINT = 'https://api.scp.splunk.com/tenant_name/ingest/v1beta2/events'
+  AUTH_TOKEN_ENDPOINT = 'https://auth.scp.splunk.com/token'
 
   before { Fluent::Test.setup } # setup router and others
 
