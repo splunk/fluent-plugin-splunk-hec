@@ -225,41 +225,39 @@ Set to True if you want to debug requests and responses to ingest API. Default i
 
 ### index (string) (optional)
 
-Identifier for the Splunk index to be used for indexing events. If this parameter is not set, 
-the indexer is chosen by HEC. This parameter only works in conjunction with the `index_key` parameter.
+Identifier for the Splunk index to be used for indexing events. If this parameter is not set,  
+the indexer is chosen by HEC. Cannot set both `index` and `index_key` parameters at the same time.
 
 ### index_key (string) (optional)
 
-The field name that contains the Splunk index name. This parameter works in conjunction with `index` and will 
-not work if the `index` parameter is not set.
+The field name that contains the Splunk index name. Cannot set both `index` and `index_key` parameters at the same time.
 
 ### host (string) (optional)
 
-The host location for events. This parameter only works in conjunction with the `host_key` parameter. 
+The host location for events. Cannot set both `host` and `host_key` parameters at the same time.  
 If the parameter is not set, the default value is the hostname of the machine runnning fluentd.
 
 ### host_key (string) (optional)
 
-Key for the host location. This parameter only works in conjunction with the `host` parameter. If the `host`
-parameter is not set, this parameter is ignored.
+Key for the host location. Cannot set both `host` and `host_key` parameters at the same time.  
 
 ### source (string) (optional)
 
-The source field for events. If this parameter is not set, the source will be decided by HEC. This
-parameter only works in conjunction with the `source_key` parameter.
+The source field for events. If this parameter is not set, the source will be decided by HEC.  
+Cannot set both `source` and `source_key` parameters at the same time.  
 
 ### source_key (string) (optional)
 
-Field name to contain source. This parameter only works in conjunction with the `source` parameter.
+Field name to contain source. Cannot set both `source` and `source_key` parameters at the same time.
 
 ### sourcetype (string) (optional)
 
-The sourcetype field for events. When not set, the sourcetype is decided by HEC. This parameter only works in 
-conjunction with the `sourcetype_key` parameter.
+The sourcetype field for events. When not set, the sourcetype is decided by HEC.  
+Cannot set both `source` and `source_key` parameters at the same time.  
 
 ### sourcetype_key (string) (optional)
 
-Field name that contains the sourcetype. This parameter only works in conjunction with the `sourcetype` parameter.
+Field name that contains the sourcetype. Cannot set both `source` and `source_key` parameters at the same time.
 
 ### fields (init) (optional)
 
