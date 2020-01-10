@@ -15,7 +15,7 @@ jobs:
       - run:
           name: Builder
           command: |
-            rake build -t -v
+            bundle exec rake build -t -v
             cp -R pkg /tmp
       - persist_to_workspace:
           root: /tmp
@@ -40,7 +40,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            rake test -t -v
+            bundle exec rake test -t -v
       - run:
           name: Start fluentd plugin
           command: |
