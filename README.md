@@ -422,7 +422,7 @@ List of SSl ciphers allowed.
 
 #### insecure_ssl (bool)
 
-Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default.
+Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default. Ensure other SSL parameters (e.g. ca_path, ca_file) are not configured in order to allow insecure SSL connections.
 
 ## About Buffer
 
