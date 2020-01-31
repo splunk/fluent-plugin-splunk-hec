@@ -8,7 +8,7 @@ bundle update --bundler
 bundle install
 
 # Build Gem
-rake build -t -v
+bundle exec rake build -t -v
 cp pkg/fluent-plugin-*.gem docker
 
 # Build Docker Image
