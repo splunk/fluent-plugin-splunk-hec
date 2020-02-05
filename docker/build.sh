@@ -12,4 +12,7 @@ bundle exec rake build -t -v
 cp pkg/fluent-plugin-*.gem docker
 
 # Build Docker Image
+echo "Copying licenses to be included in the docker image..."
+mkdir -p docker/licenses
+cp -rp LICENSE docker/licenses/
 docker build --no-cache -t splunk/fluentd-hec:$TAG ./docker
