@@ -3,7 +3,7 @@
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) in 2 modes:<br/>
 1) Via Splunk's [HEC (HTTP Event Collector) API](http://dev.splunk.com/view/event-collector/SP-CAAAE7F)<br/> 
-2) Via the [Splunk Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
+2) Via the Splunk Cloud Services (SCS) [Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
 
 ## Installation
 
@@ -29,7 +29,7 @@ $ bundle
 
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
 
-#### Example 1: Minimum Configuration
+#### Example 1: Minimum HEC Configuration
 
 ```
 <match **>
@@ -43,17 +43,18 @@ $ bundle
 This example is very basic, it just tells the plugin to send events to Splunk HEC on `https://12.34.56.78:8088` (https is the default protocol), using the HEC token `00000000-0000-0000-0000-000000000000`. It will use whatever index, source, sourcetype are configured in HEC. And the `host` of each event is the hostname of the machine which running fluentd.
 
 
-#### Example 2: Configuration example
+#### Example 2: SCS Ingest Configuration example
 
 ```
 <match **>
 @type splunk_ingest_api
 service_client_identifier xxxxxxxx
 service_client_secret_key xxxx-xxxxx
-token_endpoint /system/identity/v2beta1/token
-ingest_api_host api.url.splunk.com
-ingest_api_tenant mytenant
-ingest_api_events_endpoint /ingest/mybuild/events
+token_endpoint /token
+ingest_auth_host auth.scp.splunk.com
+ingest_api_host api.scp.splunk.com
+ingest_api_tenant <mytenant>
+ingest_api_events_endpoint /<mytenant>/ingest/v1beta2/events
 debug_http false
 </match>
 ```
@@ -225,41 +226,39 @@ Set to True if you want to debug requests and responses to ingest API. Default i
 
 ### index (string) (optional)
 
-Identifier for the Splunk index to be used for indexing events. If this parameter is not set, 
-the indexer is chosen by HEC. This parameter only works in conjunction with the `index_key` parameter.
+Identifier for the Splunk index to be used for indexing events. If this parameter is not set,  
+the indexer is chosen by HEC. Cannot set both `index` and `index_key` parameters at the same time.
 
 ### index_key (string) (optional)
 
-The field name that contains the Splunk index name. This parameter works in conjunction with `index` and will 
-not work if the `index` parameter is not set.
+The field name that contains the Splunk index name. Cannot set both `index` and `index_key` parameters at the same time.
 
 ### host (string) (optional)
 
-The host location for events. This parameter only works in conjunction with the `host_key` parameter. 
+The host location for events. Cannot set both `host` and `host_key` parameters at the same time.  
 If the parameter is not set, the default value is the hostname of the machine runnning fluentd.
 
 ### host_key (string) (optional)
 
-Key for the host location. This parameter only works in conjunction with the `host` parameter. If the `host`
-parameter is not set, this parameter is ignored.
+Key for the host location. Cannot set both `host` and `host_key` parameters at the same time.  
 
 ### source (string) (optional)
 
-The source field for events. If this parameter is not set, the source will be decided by HEC. This
-parameter only works in conjunction with the `source_key` parameter.
+The source field for events. If this parameter is not set, the source will be decided by HEC.  
+Cannot set both `source` and `source_key` parameters at the same time.  
 
 ### source_key (string) (optional)
 
-Field name to contain source. This parameter only works in conjunction with the `source` parameter.
+Field name to contain source. Cannot set both `source` and `source_key` parameters at the same time.
 
 ### sourcetype (string) (optional)
 
-The sourcetype field for events. When not set, the sourcetype is decided by HEC. This parameter only works in 
-conjunction with the `sourcetype_key` parameter.
+The sourcetype field for events. When not set, the sourcetype is decided by HEC.  
+Cannot set both `source` and `source_key` parameters at the same time.  
 
 ### sourcetype_key (string) (optional)
 
-Field name that contains the sourcetype. This parameter only works in conjunction with the `sourcetype` parameter.
+Field name that contains the sourcetype. Cannot set both `source` and `source_key` parameters at the same time.
 
 ### fields (init) (optional)
 
@@ -423,7 +422,7 @@ List of SSl ciphers allowed.
 
 #### insecure_ssl (bool)
 
-Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default.
+Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default. Ensure parameter `ca_file` is not configured in order to allow insecure SSL connections when this value is set to `true`.
 
 ## About Buffer
 
