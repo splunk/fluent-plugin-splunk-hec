@@ -23,13 +23,13 @@ RUN wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux6
       chmod +x ./jq && \
       cp jq /usr/bin
 
-RUN gem install -N fluentd -v "1.4.0" \
+RUN gem install -N fluentd -v "1.9.1" \
     && gem install -N fluent-plugin-systemd -v "1.0.2" \
-     && gem install -N fluent-plugin-concat -v "2.2.2" \
-     && gem install -N fluent-plugin-prometheus -v "1.3.0" \
+     && gem install -N fluent-plugin-concat -v "2.4.0" \
+     && gem install -N fluent-plugin-prometheus -v "1.7.0" \
      && gem install -N fluent-plugin-jq -v "0.5.1" \
-     && gem install -N fluent-plugin-kubernetes_metadata_filter -v "2.1.2" \
-     && gem install -N oj -v "3.5.1" \
+     && gem install -N fluent-plugin-kubernetes_metadata_filter -v "2.4.2" \
+     && gem install -N oj -v "3.10.2" \
      && gem install -N /tmp/*.gem
 
  RUN groupadd -r $FLUENT_USER && \
