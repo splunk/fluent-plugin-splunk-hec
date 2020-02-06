@@ -25,7 +25,8 @@ RUN wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux6
 
 COPY Gemfile* ./
 RUN gem install bundler \
-   && bundle install 
+   && bundle install \
+   && bundle exec gem install /tmp/*.gem
 
  RUN groupadd -r $FLUENT_USER && \
    useradd -r -g $FLUENT_USER $FLUENT_USER && \

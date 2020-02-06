@@ -15,4 +15,3 @@ gem 'net-http-persistent', '~> 3.0'
 gem 'openid_connect', '~> 1.1.8'
 gem 'prometheus-client', '< 0.10.0'
 gem 'activesupport', '~> 5.2'
-gem "fluent-plugin-splunk-hec", "=1.2.0", path: "."
