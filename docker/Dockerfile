@@ -23,7 +23,8 @@ RUN wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux6
       chmod +x ./jq && \
       cp jq /usr/bin
 
-RUN gem install -N fluentd -v "1.9.1" \
+RUN gem install -N tzinfo -v "1.2.6" \ 
+    && gem install -N fluentd -v "1.9.1" \
     && gem install -N fluent-plugin-systemd -v "1.0.2" \
      && gem install -N fluent-plugin-concat -v "2.4.0" \
      && gem install -N fluent-plugin-prometheus -v "1.7.0" \
