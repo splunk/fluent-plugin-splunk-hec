@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'fluent-plugin-kubernetes_metadata_filter', '~> 2.4.2'
   spec.add_runtime_dependency 'fluentd', '~> 1.9.0'
   spec.add_runtime_dependency 'multi_json', '~> 1.13'
-  spec.add_runtime_dependency 'net-http-persistent', '~> 3.0'
+  spec.add_runtime_dependency 'net-http-persistent', '~> 3.1'
   spec.add_runtime_dependency 'openid_connect', '~> 1.1.8'
   spec.add_runtime_dependency 'prometheus-client', '< 0.10.0'
   spec.add_runtime_dependency 'activesupport', '~> 5.2'
