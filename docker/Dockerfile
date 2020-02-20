@@ -1,5 +1,7 @@
 FROM registry.access.redhat.com/ubi8/ruby-25
 
+ARG VERSION
+
 MAINTAINER DataEdge DataEdge@splunk.com
 
 LABEL name="Splunk Connect for Kubernetes Logging container" \
