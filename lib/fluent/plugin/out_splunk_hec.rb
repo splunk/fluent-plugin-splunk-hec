@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fluent/env'
 require 'fluent/output'
 require 'fluent/plugin/output'
 require 'fluent/plugin/formatter'
@@ -217,7 +218,7 @@ module Fluent::Plugin
         # That's why we use `to_s` here.
         time: time.to_f.to_s,
         event: 'metric'
-      }.tap do |payload|
+      }.tap do |payload| 
         if @time
           time_value = @time.(tag, record)
           # if no value is found don't override and use fluentd's time

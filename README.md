@@ -2,13 +2,13 @@
 # fluent-plugin-splunk-hec
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) in 2 modes:<br/>
-1) Via Splunk's [HEC (HTTP Event Collector) API](http://dev.splunk.com/view/event-collector/SP-CAAAE7F)<br/>
-2) Via the [Splunk Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
+1) Via Splunk's [HEC (HTTP Event Collector) API](http://dev.splunk.com/view/event-collector/SP-CAAAE7F)<br/> 
+2) Via the Splunk Cloud Services (SCS) [Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
 
 ## Installation
 
 ### RubyGems
-```
+``` 
 $ gem install fluent-plugin-splunk-hec
 ```
 ### Bundler
@@ -29,7 +29,7 @@ $ bundle
 
 * See also: [Output Plugin Overview](https://docs.fluentd.org/v1.0/articles/output-plugin-overview)
 
-#### Example 1: Minimum Configuration
+#### Example 1: Minimum HEC Configuration
 
 ```
 <match **>
@@ -43,17 +43,18 @@ $ bundle
 This example is very basic, it just tells the plugin to send events to Splunk HEC on `https://12.34.56.78:8088` (https is the default protocol), using the HEC token `00000000-0000-0000-0000-000000000000`. It will use whatever index, source, sourcetype are configured in HEC. And the `host` of each event is the hostname of the machine which running fluentd.
 
 
-#### Example 2: Configuration example
+#### Example 2: SCS Ingest Configuration example
 
 ```
 <match **>
 @type splunk_ingest_api
 service_client_identifier xxxxxxxx
 service_client_secret_key xxxx-xxxxx
-token_endpoint /system/identity/v2beta1/token
-ingest_api_host api.url.splunk.com
-ingest_api_tenant mytenant
-ingest_api_events_endpoint /ingest/mybuild/events
+token_endpoint /token
+ingest_auth_host auth.scp.splunk.com
+ingest_api_host api.scp.splunk.com
+ingest_api_tenant <mytenant>
+ingest_api_events_endpoint /<mytenant>/ingest/v1beta2/events
 debug_http false
 </match>
 ```
@@ -157,7 +158,7 @@ This value must be set to `splunk_hec` when using HEC API and to `splunk_ingest_
 
 #### protocol (enum) (optional)
 
-This is the protocol to use for calling the HEC API. Available values are: http, https. This parameter is
+This is the protocol to use for calling the HEC API. Available values are: http, https. This parameter is 
 set to `https` by default.
 
 ### hec_host (string) (required)
@@ -194,72 +195,70 @@ If `coerce_to_utf8` is set to `true`, any non-UTF-8 character is replaced by the
 
 ### Parameters for `splunk_ingest_api`
 
-### service_client_identifier: (optional) (string)
+### service_client_identifier: (optional) (string) 
 
 Splunk uses the client identifier to make authorized requests to the ingest API.
 
-### service_client_secret_key: (string)
+### service_client_secret_key: (string) 
 
 The client identifier uses this authorization to make requests to the ingest API.
 
-### token_endpoint: (string)
+### token_endpoint: (string) 
 
 This value indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API.
 
-### ingest_api_host: (string)
+### ingest_api_host: (string) 
 
 Indicates which url/hostname to use for requests to the ingest API.
 
-### ingest_api_tenant: (string)
+### ingest_api_tenant: (string) 
 
 Indicates which tenant Splunk should use for requests to the ingest API.
 
-### ingest_api_events_endpoint: (string)
+### ingest_api_events_endpoint: (string) 
 
 Indicates which endpoint to use for requests to the ingest API.
 
-### debug_http: (bool)
+### debug_http: (bool) 
 Set to True if you want to debug requests and responses to ingest API. Default is false.
 
 ### Parameters for both `splunk_hec` and `splunk_ingest_api`
 
 ### index (string) (optional)
 
-Identifier for the Splunk index to be used for indexing events. If this parameter is not set,
-the indexer is chosen by HEC. This parameter only works in conjunction with the `index_key` parameter.
+Identifier for the Splunk index to be used for indexing events. If this parameter is not set,  
+the indexer is chosen by HEC. Cannot set both `index` and `index_key` parameters at the same time.
 
 ### index_key (string) (optional)
 
-The field name that contains the Splunk index name. This parameter works in conjunction with `index` and will
-not work if the `index` parameter is not set.
+The field name that contains the Splunk index name. Cannot set both `index` and `index_key` parameters at the same time.
 
 ### host (string) (optional)
 
-The host location for events. This parameter only works in conjunction with the `host_key` parameter.
+The host location for events. Cannot set both `host` and `host_key` parameters at the same time.  
 If the parameter is not set, the default value is the hostname of the machine runnning fluentd.
 
 ### host_key (string) (optional)
 
-Key for the host location. This parameter only works in conjunction with the `host` parameter. If the `host`
-parameter is not set, this parameter is ignored.
+Key for the host location. Cannot set both `host` and `host_key` parameters at the same time.  
 
 ### source (string) (optional)
 
-The source field for events. If this parameter is not set, the source will be decided by HEC. This
-parameter only works in conjunction with the `source_key` parameter.
+The source field for events. If this parameter is not set, the source will be decided by HEC.  
+Cannot set both `source` and `source_key` parameters at the same time.  
 
 ### source_key (string) (optional)
 
-Field name to contain source. This parameter only works in conjunction with the `source` parameter.
+Field name to contain source. Cannot set both `source` and `source_key` parameters at the same time.
 
 ### sourcetype (string) (optional)
 
-The sourcetype field for events. When not set, the sourcetype is decided by HEC. This parameter only works in
-conjunction with the `sourcetype_key` parameter.
+The sourcetype field for events. When not set, the sourcetype is decided by HEC.  
+Cannot set both `source` and `source_key` parameters at the same time.  
 
 ### sourcetype_key (string) (optional)
 
-Field name that contains the sourcetype. This parameter only works in conjunction with the `sourcetype` parameter.
+Field name that contains the sourcetype. Cannot set both `source` and `source_key` parameters at the same time.
 
 ### fields (init) (optional)
 
@@ -320,7 +319,7 @@ If a parameter has just a key, it means its value is exactly the same as the key
 
 #### When `data_type` is `metric`
 
-For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` is not presented, the original input event will be used as dimensions. If an empty `<fields></fields>` is presented, no dimension is sent. For example, given the following configuration:
+For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` is not presented, the original input event will be used as dimensions. If an empty `<fields></fields>` is presented, no dimension is sent. For example, given the following configuration: 
 
 ```
 <match **>
@@ -371,7 +370,7 @@ Multiple `<format>` sections can be defined to use different formatters for diff
   </format>
 ```
 
-This example:
+This example: 
 - Formats events with tags that start with `sometag.` with the `single_value` formatter
 - Formats events with tags `some.othertag` with the `csv` formatter
 - Formats all other events with the `json` formatter (the default formatter)
@@ -388,30 +387,14 @@ The following parameters can be used for tuning HTTP connections:
 
 #### idle_timeout (integer)
 
-The default is five seconds. If a connection has not been used for five seconds, it is automatically reset at next use, in order to avoid attempting to send to a closed connection. Specifiy `nil` to prohibit any timeouts.
+The default is five seconds. If a connection has not been used for five seconds, it is automatically reset at next use, in order to avoid attempting to send to a closed connection. Specifiy `nil` to prohibit any timeouts. 
 
 #### read_timeout (integer)
-The amount of time allowed between reading two chunks from the socket. The default value is `nil`, which means no timeout.
+The amount of time allowed between reading two chunks from the socket. The default value is `nil`, which means no timeout. 
 
 #### open_timeout (integer)
 
 The amount of time to wait for a connection to be opened. The default is `nil`, which means no timeout.
-
-### Net::HTTP::Persistent parameters (optional)
-
-The following parameters can be used for tuning HTTP connections
-
-#### idle_timeout (integer)
-
-The default is 5 seconds. If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection; nil means no timeout.
-
-#### read_timeout (integer)
-
-The default is nil. The amount of time allowed between reading two chunks from the socket.
-
-#### open_timeout (integer)
-
-The default is nil. The amount of time to wait for a connection to be opened.
 
 ### SSL parameters
 
@@ -439,7 +422,7 @@ List of SSl ciphers allowed.
 
 #### insecure_ssl (bool)
 
-Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default.
+Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default. Ensure parameter `ca_file` is not configured in order to allow insecure SSL connections when this value is set to `true`.
 
 ## About Buffer
 
@@ -454,4 +437,4 @@ Here are some hints:
 
 ## License
 
-Please see [LICENSE](LICENSE).
+Please see [LICENSE](LICENSE). 

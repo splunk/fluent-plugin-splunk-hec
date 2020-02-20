@@ -15,14 +15,14 @@ jobs:
       - run:
           name: Builder
           command: |
-            rake build -t -v
+            bundle exec rake build -t -v
             cp -R pkg /tmp
       - persist_to_workspace:
           root: /tmp
           paths:
             - pkg
 
-  test:
+  unit_test:
     docker:
        - image: circleci/ruby:2.6.1-node-browsers
        - image: luckyj5/splunk-circleci-hec-720:latest
@@ -40,7 +40,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            rake test -t -v
+            bundle exec rake test -t -v
       - run:
           name: Start fluentd plugin
           command: |
@@ -50,24 +50,31 @@ jobs:
           command: |
             .circleci/integration/test.sh
 
-  push:
+  func_test_master:
     docker:
       - image: circleci/ruby:2.6.1-node-browsers
     working_directory: ~/repo
     steps:
-      - attach_workspace:
-          at: /tmp
       - checkout
       - setup_remote_docker:
           reusable: true
       - run:
-          name: Push rubygem to s3
+          name: trigger
           command: |
-            .circleci/push_gem.sh
+            .circleci/trigger_func_test.sh master
+
+  func_test_develop:
+    docker:
+      - image: circleci/ruby:2.6.1-node-browsers
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - setup_remote_docker:
+          reusable: true
       - run:
-          name: Build and push docker image to ecr
+          name: trigger
           command: |
-            .circleci/build_and_push.sh
+            .circleci/trigger_func_test.sh develop
 
   release:
     docker:
@@ -103,7 +110,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp
-      - checkout
+      - checkout          
       - setup_remote_docker:
           reusable: true
       - run:
@@ -118,25 +125,41 @@ workflows:
       - build:
           filters:
             branches:
-              ignore: /^release\/.*/
-      - test:
+              ignore: 
+                - /^release\/.*/
+                - master
+      - unit_test:
           requires:
             - build
-      - push:
+      # - func_test_master:
+      #     requires:
+      #       - unit_test
+      # - func_test_develop:
+      #     requires:
+      #       - unit_test
+      - check_version:
           requires:
-            - test
+            - unit_test
+            # - func_test_develop
           filters:
             branches:
               only: develop
-      - check_version:
-          requires:
-            - push
   release:
     jobs:
       - build:
           filters:
             branches:
               only: master
+      - unit_test:
+          requires:
+            - build
+      # - func_test_master:
+      #     requires:
+      #       - unit_test
+      # - func_test_develop:
+      #     requires:
+      #       - unit_test
       - release:
           requires:
-          - build
+            - unit_test
+            # - func_test_develop
