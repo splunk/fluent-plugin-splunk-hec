@@ -1,25 +1,37 @@
-FROM fluent/fluentd:v1.7-debian-1
-LABEL maintainer="Splunk Inc. <DataEdge@splunk.com>"
-# Use root account to use apt
+FROM registry.access.redhat.com/ubi8/ruby-25
+
+ARG VERSION
+
+MAINTAINER DataEdge DataEdge@splunk.com
+
+LABEL name="Splunk Connect for Kubernetes Logging container" \
+      maintainer="DataEdge@splunk.com" \
+      vendor="Splunk Inc." \
+      version=${VERSION} \
+      release=${VERSION} \
+      summary="Splunk Connect for Kubernetes Logging container" \
+      description="Splunk Connect for Kubernetes Logging container"
+
+ENV FLUENT_USER fluent
+
 USER root
 
 COPY *.gem /tmp/
+COPY licenses /licenses
 
-RUN buildDeps="sudo make gcc g++ libc-dev" \
- && apt-get update \
- && apt-get install -y --no-install-recommends $buildDeps \
- && apt-get install -y jq \
- && gem install -N fluent-plugin-systemd -v "1.0.2" \
- && gem install -N fluent-plugin-concat -v "2.2.2" \
- && gem install -N fluent-plugin-prometheus -v "1.3.0" \
- && gem install -N fluent-plugin-jq -v "0.5.1" \
- && gem install -N fluent-plugin-kubernetes_metadata_filter -v "2.1.2" \
- && gem install -N oj -v "3.5.1" \
- && gem install -N /tmp/*.gem \
- && gem sources --clear-all \
- && SUDO_FORCE_REMOVE=yes \
-    apt-get purge -y --auto-remove \
-                  -o APT::AutoRemove::RecommendsImportant=false \
-                  $buildDeps \
- && rm -rf /var/lib/apt/lists/* \
- && rm -rf /tmp/* /var/tmp/* /usr/lib/ruby/gems/*/cache/*.gem
+RUN wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
+      chmod +x ./jq && \
+      cp jq /usr/bin
+
+COPY Gemfile* ./
+RUN gem install bundler \
+   && bundle install \
+   && bundle exec gem install /tmp/*.gem
+
+ RUN groupadd -r $FLUENT_USER && \
+   useradd -r -g $FLUENT_USER $FLUENT_USER && \
+   mkdir -p /fluentd/log fluentd/etc /fluentd/plugins &&\
+   chown -R $FLUENT_USER /fluentd && chgrp -R $FLUENT_USER /fluentd
+
+USER $FLUENT_USER
+CMD exec fluentd -c /fluentd/etc/fluent.conf

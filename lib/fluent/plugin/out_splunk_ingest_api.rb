@@ -16,10 +16,13 @@ module Fluent::Plugin
     config_param :service_client_secret_key, :string, default: nil
 
     desc 'Token Endpoint'
-    config_param :token_endpoint, :string, default: '/system/identity/v1/token'
+    config_param :token_endpoint, :string, default: '/token'
+
+    desc 'Token Auth Hostname'
+    config_param :ingest_auth_host, :string, default: 'auth.scp.splunk.com'
 
     desc 'Ingest Api Hostname'
-    config_param :ingest_api_host, :string, default: 'api.splunkbeta.com'
+    config_param :ingest_api_host, :string, default: 'api.scp.splunk.com'
 
     desc 'Ingest API Tenant Name'
     config_param :ingest_api_tenant, :string
@@ -90,7 +93,7 @@ module Fluent::Plugin
         identifier: @service_client_identifier,
         secret: @service_client_secret_key,
         redirect_uri: 'http://localhost:8080/', # Not used
-        host: @ingest_api_host,
+        host: @ingest_auth_host,
         scheme: 'https'
       )
 

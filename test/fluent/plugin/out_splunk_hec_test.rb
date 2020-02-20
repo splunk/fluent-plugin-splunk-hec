@@ -100,15 +100,6 @@ describe Fluent::Plugin::SplunkHecOutput do
     assert_nil(test_driver.instance.time_key)
   end
 
-  # it "should contain splunk event time field via fluentd, as nil" do
-  #   expect(create_output_driver('hec_host splunk.com').instance.time_key).must_equal nil
-  # end
-  #
-  it "should contain splunk event time field via fluentd, as nil" do
-        test_driver = create_output_driver('hec_host splunk.com')
-        assert_nil(test_driver.instance.time_key)
-  end
-
   it "should use host machine's hostname for event host by default" do
     verify_sent_events do |batch|
       batch.each do |item|
