@@ -137,13 +137,13 @@ workflows:
       # - func_test_develop:
       #     requires:
       #       - unit_test
-      # - check_version:
-      #     requires:
-      #       - func_test_master
-      #       - func_test_develop
-      #     filters:
-      #       branches:
-      #         only: develop
+      - check_version:
+          requires:
+            - func_test_master
+            - func_test_develop
+          filters:
+            branches:
+              only: develop
   release:
     jobs:
       - build:
