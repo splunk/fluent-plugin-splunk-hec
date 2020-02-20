@@ -1,17 +1,17 @@
 FROM registry.access.redhat.com/ubi8/ruby-25
 
+ARG VERSION
+
 MAINTAINER DataEdge DataEdge@splunk.com
 
 LABEL name="Splunk Connect for Kubernetes Logging container" \
       maintainer="DataEdge@splunk.com" \
       vendor="Splunk Inc." \
-      version="1.2.1" \
-      release="1.2.1" \
+      version=${VERSION} \
+      release=${VERSION} \
       summary="Splunk Connect for Kubernetes Logging container" \
       description="Splunk Connect for Kubernetes Logging container"
 
-ARG VERSION
-ENV VERSION=${VERSION}
 ENV FLUENT_USER fluent
 
 USER root

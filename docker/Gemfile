@@ -11,7 +11,8 @@ gem "fluent-plugin-jq", "=0.5.1"
 gem "fluent-plugin-kubernetes_metadata_filter", "=2.4.2"
 gem "oj", "=3.10.2"
 gem 'multi_json', '~> 1.13'
-gem 'net-http-persistent', '~> 3.0'
+gem 'net-http-persistent', '~> 3.1'
 gem 'openid_connect', '~> 1.1.8'
 gem 'prometheus-client', '< 0.10.0'
 gem 'activesupport', '~> 5.2'
+gem 'http_parser.rb', '=0.5.3'
