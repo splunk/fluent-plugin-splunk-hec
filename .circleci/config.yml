@@ -131,19 +131,19 @@ workflows:
       - unit_test:
           requires:
             - build
-      - func_test_master:
-          requires:
-            - unit_test
-      - func_test_develop:
-          requires:
-            - unit_test
-      - check_version:
-          requires:
-            - func_test_master
-            - func_test_develop
-          filters:
-            branches:
-              only: develop
+      # - func_test_master:
+      #     requires:
+      #       - unit_test
+      # - func_test_develop:
+      #     requires:
+      #       - unit_test
+      # - check_version:
+      #     requires:
+      #       - func_test_master
+      #       - func_test_develop
+      #     filters:
+      #       branches:
+      #         only: develop
   release:
     jobs:
       - build:
@@ -153,13 +153,13 @@ workflows:
       - unit_test:
           requires:
             - build
-      - func_test_master:
-          requires:
-            - unit_test
-      - func_test_develop:
-          requires:
-            - unit_test
+      # - func_test_master:
+      #     requires:
+      #       - unit_test
+      # - func_test_develop:
+      #     requires:
+      #       - unit_test
       - release:
           requires:
-            - func_test_master
-            - func_test_develop
+            - unit_test
+            # - func_test_develop
