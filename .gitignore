@@ -10,3 +10,4 @@
 *.aes
 coverage
 docker/licenses/
+docker/gem/
