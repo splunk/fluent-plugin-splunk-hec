@@ -16,3 +16,5 @@ gem 'openid_connect', '~> 1.1.8'
 gem 'prometheus-client', '< 0.10.0'
 gem 'activesupport', '~> 5.2'
 gem 'http_parser.rb', '=0.5.3'
+
+gem 'fluent-plugin-splunk-hec', path: 'gem/'
