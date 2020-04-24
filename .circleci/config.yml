@@ -41,14 +41,6 @@ jobs:
           name: Run unit tests
           command: |
             bundle exec rake test -t -v
-      - run:
-          name: Start fluentd plugin
-          command: |
-            .circleci/integration/run.sh
-      - run:
-          name: Run integration tests
-          command: |
-            .circleci/integration/test.sh
 
   func_test_master:
     docker:

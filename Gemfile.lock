@@ -3,7 +3,7 @@ PATH
   specs:
     fluent-plugin-splunk-hec (1.2.1)
       activesupport (~> 5.2)
-      fluent-plugin-kubernetes_metadata_filter (~> 2.4.2)
+      fluent-plugin-kubernetes_metadata_filter (~> 2.4)
       fluentd (>= 1.4)
       http_parser.rb (= 0.5.3)
       multi_json (~> 1.13)
