@@ -137,6 +137,10 @@ workflows:
             branches:
               only: develop
   release:
+    automaticbuild:
+     triggers:
+       - schedule:
+           cron: "0 0 1 * *"
     jobs:
       - build:
           filters:
