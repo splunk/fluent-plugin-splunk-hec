@@ -20,6 +20,6 @@ if [ $VERSION_COMMIT = $LATEST_COMMIT ];
         git checkout -b release/$VERSION origin/develop
         git push https://$RELEASE_GITHUB_USER:$RELEASE_GITHUB_PASS@github.com/splunk/fluent-plugin-splunk-hec.git release/$VERSION
         git checkout master
-        git merge --no-edit release/$VERSION
+        git merge --no-edit -X theirs release/$VERSION
         git push https://$RELEASE_GITHUB_USER:$RELEASE_GITHUB_PASS@github.com/splunk/fluent-plugin-splunk-hec.git master
 fi
