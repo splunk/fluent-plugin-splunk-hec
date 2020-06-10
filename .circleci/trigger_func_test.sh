@@ -11,6 +11,7 @@ curl -X POST --header "Content-Type: application/json" \
     -d '{"build_parameters": {"CIRCLE_JOB":"build_test", "TRIG_BRANCH":"'"$CIRCLE_BRANCH"'", "TRIG_PROJECT":"'"$CIRCLE_PROJECT_REPONAME"'", "TRIG_REPO":"'"$CIRCLE_REPOSITORY_URL"'"}}' "https://circleci.com/api/v1/project/$ORGANIZATION/$PROJECT/tree/$BRANCH?circle-token=$CIRCLE_TOKEN" > build.json
 cat build.json
 BUILD_NUM=$(jq -r .build_num build.json)
+sleep 10
 
 # Wait until finish or maximum 20 minutes
 TIMEOUT=20
