@@ -1,8 +1,8 @@
 PATH
   remote: gem
   specs:
-    fluent-plugin-splunk-hec (1.2.1)
-      activesupport (~> 5.2)
+    fluent-plugin-splunk-hec (1.2.3)
+      activesupport (>= 5.2)
       fluent-plugin-kubernetes_metadata_filter (~> 2.4)
       fluentd (>= 1.4)
       http_parser.rb (= 0.5.3)
@@ -14,9 +14,9 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (5.2.4.2)
-      activesupport (= 5.2.4.2)
-    activesupport (5.2.4.2)
+    activemodel (5.2.4.3)
+      activesupport (= 5.2.4.3)
+    activesupport (5.2.4.3)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
@@ -40,8 +40,8 @@ GEM
     fluent-plugin-jq (0.5.1)
       fluentd (>= 0.14.10, < 2)
       multi_json (~> 1.13)
-    fluent-plugin-kubernetes_metadata_filter (2.4.5)
-      fluentd (>= 0.14.0, < 2)
+    fluent-plugin-kubernetes_metadata_filter (2.4.6)
+      fluentd (>= 0.14.0, < 1.10)
       kubeclient (< 5)
       lru_redux
     fluent-plugin-prometheus (1.7.0)
@@ -161,7 +161,7 @@ DEPENDENCIES
   activesupport (~> 5.2)
   fluent-plugin-concat (= 2.4.0)
   fluent-plugin-jq (= 0.5.1)
-  fluent-plugin-kubernetes_metadata_filter (= 2.4.5)
+  fluent-plugin-kubernetes_metadata_filter (= 2.4.6)
   fluent-plugin-prometheus (= 1.7.0)
   fluent-plugin-splunk-hec!
   fluent-plugin-systemd (= 1.0.2)

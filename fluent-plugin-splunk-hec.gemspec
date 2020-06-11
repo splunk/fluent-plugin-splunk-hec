@@ -39,7 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'net-http-persistent', '~> 3.1'
   spec.add_runtime_dependency 'openid_connect', '~> 1.1.8'
   spec.add_runtime_dependency 'prometheus-client', '< 0.10.0'
-  spec.add_runtime_dependency 'activesupport', '~> 5.2'
+  spec.add_runtime_dependency 'activesupport', '>= 5.2'
   spec.add_runtime_dependency 'http_parser.rb', '= 0.5.3'
 
   spec.add_development_dependency 'bundler', '~> 2.0'
