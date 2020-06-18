@@ -10,6 +10,7 @@ LABEL name="Splunk Connect for Kubernetes Logging container" \
       summary="Splunk Connect for Kubernetes Logging container" \
       description="Splunk Connect for Kubernetes Logging container"
 
+ENV VERSION=${VERSION}
 ENV FLUENT_USER fluent
 
 USER root
