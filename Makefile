@@ -6,11 +6,11 @@ clean:
 build: clean 
 	@bundle exec rake build
 
-docker: build
+docker: build install-deps
 	@cp pkg/fluent-plugin-*.gem docker
 	@mkdir -p docker/licenses
 	@cp -rp LICENSE docker/licenses/
-	@docker build --build-arg VERSION=$(VERSION) -t splunk/fluentd-hec:$(VERSION) ./docker
+	@docker build --no-cache --pull --build-arg VERSION=$(VERSION) -t splunk/fluentd-hec:$(VERSION) ./docker
 
 unit-test:
 	@bundle exec rake test

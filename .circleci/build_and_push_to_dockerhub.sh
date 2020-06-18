@@ -7,7 +7,7 @@ echo "Copying licenses to be included in the docker image..."
 mkdir docker/licenses
 cp -rp LICENSE docker/licenses/
 VERSION=`cat VERSION`
-docker build --no-cache -t splunk/fluent-plugin-splunk-hec:ci ./docker
+docker build --no-cache --pull --build-arg VERSION=$VERSION -t splunk/fluent-plugin-splunk-hec:ci ./docker
 docker tag splunk/fluent-plugin-splunk-hec:ci splunk/${DOCKERHUB_REPO_NAME}:${VERSION}
 docker tag splunk/fluent-plugin-splunk-hec:ci splunk/${DOCKERHUB_REPO_NAME}:latest
 echo "Push docker image to splunk dockerhub..."
