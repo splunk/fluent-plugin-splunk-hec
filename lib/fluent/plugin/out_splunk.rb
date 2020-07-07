@@ -123,9 +123,17 @@ module Fluent::Plugin
         # That's why we use `to_s` here.
         time: time.to_f.to_s
       }.tap do |payload|
-        payload[:index] = @index.call(tag, record) if @index
-        payload[:source] = @source.call(tag, record) if @source
-        payload[:sourcetype] = @sourcetype.call(tag, record) if @sourcetype
+        if @time
+          time_value = @time.(tag, record)
+          # if no value is found don't override and use fluentd's time
+          if !time_value.nil?
+            payload[:time] = time_value
+          end
+        end
+
+        payload[:index] = @index.(tag, record) if @index
+        payload[:source] = @source.(tag, record) if @source
+        payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
 
         # delete nil fields otherwise will get format error from HEC
         %i[host index source sourcetype].each { |f| payload.delete f if payload[f].nil? }
@@ -213,7 +221,7 @@ module Fluent::Plugin
       @extra_fields = @fields.corresponding_config_element.map do |k, v|
         [k, v.empty? ? k : v]
       end.to_h
-      end
+    end
 
     def pick_custom_format_method
       if @data_type == :event

@@ -178,43 +178,6 @@ module Fluent::Plugin
       raise Fluent::ConfigError, '`metric_value_key` is required when `metric_name_key` is set.' unless @metric_value_key
     end
 
-    def format_event(tag, time, record)
-      MultiJson.dump({
-        host: @host ? @host.(tag, record) : @default_host,
-        # From the API reference
-        # http://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTinput#services.2Fcollector
-        # `time` should be a string or unsigned integer.
-        # That's why we use the to_string function here.
-        time: time.to_f.to_s
-        }.tap { |payload|
-          if @time
-            time_value = @time.(tag, record)
-            # if no value is found don't override and use fluentd's time
-            if !time_value.nil?
-              payload[:time] = time_value
-            end
-          end
-
-          payload[:index] = @index.(tag, record) if @index
-          payload[:source] = @source.(tag, record) if @source
-          payload[:sourcetype] = @sourcetype.(tag, record) if @sourcetype
-
-          # delete nil fields otherwise will get formet error from HEC
-          %i[host index source sourcetype].each { |f| payload.delete f if payload[f].nil? }
-
-          if @extra_fields
-            payload[:fields] = @extra_fields.map { |name, field| [name, record[field]] }.to_h
-            payload[:fields].delete_if { |_k,v| v.nil? }
-            # if a field is already in indexed fields, then remove it from the original event
-            @extra_fields.values.each { |field| record.delete field }
-          end
-          if formatter = @formatters.find { |f| f.match? tag }
-            record = formatter.format(tag, time, record)
-          end
-          payload[:event] = convert_to_utf8 record
-      })
-    end
-
     def format_metric(tag, time, record)
       payload = {
         host: @host ? @host.call(tag, record) : @default_host,
