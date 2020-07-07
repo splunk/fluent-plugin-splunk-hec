@@ -353,6 +353,10 @@ and the following input event:
 
 Then, a metric of "CPU Usage" with value=100, along with 3 dimensions file="server.rb", status="OK", and app="webServer" are sent to Splunk.
 
+### fields_key (string) (optional)
+
+Lets you specify the key for a hash of additional key value pairs to add as index-time fields for an event. The fields in the hash specified by `fields_key` will be merged with any fields in the `<fields>` section, with values in `fields_key` winning in the case of conflict.
+
 ### &lt;format&gt; section (optional) (multiple)
 
 The `<format>` section let you define which formatter to use to format events.

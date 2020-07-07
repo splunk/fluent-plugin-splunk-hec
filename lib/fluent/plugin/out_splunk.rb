@@ -51,6 +51,9 @@ module Fluent::Plugin
       # this is blank on purpose
     end
 
+    desc 'Define the location of a hash of index-time fields for event data. The fields defined in the hash will be merged with any fields defined in the `fields` section, and null value fields will be removed.'
+    config_param :fields_key, :string, default: nil
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -144,6 +147,20 @@ module Fluent::Plugin
           # if a field is already in indexed fields, then remove it from the original event
           @extra_fields.values.each { |field| record.delete field }
         end
+
+        # Add fields from the record
+        if @fields_key && record[@fields_key] && record[@fields_key].is_a?(Hash)
+          record[@fields_key].compact!
+
+          if payload[:fields]
+            payload[:fields].merge! record[@fields_key]
+          else
+            payload[:fields] = record[@fields_key]
+          end
+
+          record.delete @fields_key
+        end
+
         if formatter = @formatters.find { |f| f.match? tag }
           record = formatter.format(tag, time, record)
         end

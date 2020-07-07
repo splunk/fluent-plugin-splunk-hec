@@ -139,12 +139,14 @@ describe Fluent::Plugin::SplunkHecOutput do
       host_key       from
       source_key     file
       sourcetype_key agent.name
+      fields_key     fields
     CONF
       batch.each do |item|
         expect(item['index']).must_equal 'info'
         expect(item['host']).must_equal 'my_machine'
         expect(item['source']).must_equal 'cool.log'
         expect(item['sourcetype']).must_equal 'test'
+        expect(item['fields']).must_equal('my-field' => 'my-value')
 
         JSON.load(item['event']).tap do |event|
           %w[level from file].each { |field| expect(event).wont_include field }
@@ -154,7 +156,7 @@ describe Fluent::Plugin::SplunkHecOutput do
     end
   end
 
-  it 'should remove nil fileds.' do
+  it 'should remove nil fields.' do
     verify_sent_events(<<~CONF) do |batch|
       index_key      nonexist
       host_key       nonexist
@@ -216,6 +218,16 @@ describe Fluent::Plugin::SplunkHecOutput do
         expect(item['fields']['from']).must_equal 'my_machine'
         expect(item['fields']['logLevel']).must_equal 'info'
         expect(item['fields']).wont_be :has_key?, 'nonexist'
+      end
+    end
+  end
+
+  it 'should handle an empty fields_key' do
+    verify_sent_events(<<~CONF) do |batch|
+      fields_key nothing
+      CONF
+      batch.each do |item|
+        assert_nil(item['fields'])
       end
     end
   end
@@ -349,6 +361,9 @@ describe Fluent::Plugin::SplunkHecOutput do
       'agent' => {
         'name' => 'test',
         'version' => '1.0.0'
+      },
+      'fields' => {
+        'my-field' => 'my-value'
       }
     }
     events = [
