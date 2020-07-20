@@ -6,7 +6,7 @@ clean:
 build: clean 
 	@bundle exec rake build
 
-docker: build install-deps
+docker: install-deps build
 	@cp pkg/fluent-plugin-*.gem docker
 	@mkdir -p docker/licenses
 	@cp -rp LICENSE docker/licenses/
@@ -19,3 +19,7 @@ install-deps:
 	@gem install bundler
 	@bundle update --bundler
 	@bundle install
+
+unpack: build
+	@cp pkg/fluent-plugin-*.gem docker
+	@gem unpack docker/fluent-plugin-*.gem --target docker/gem
