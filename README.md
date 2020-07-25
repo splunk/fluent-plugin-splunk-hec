@@ -273,6 +273,14 @@ When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `
 
 Depending on the value of `data_type` parameter, the parameters inside the `<fields>` section have different meanings. Despite the meaning, the syntax for parameters is unique.
 
+### app_name (string) (Optional)
+
+Splunk app name using this plugin (default to `hec_plugin_gem`)
+
+### app_version (string) (Optional)
+
+The version of Splunk app using this this plugin (default to plugin version)
+
 #### When `data_type` is `event`
 
 In this case, parameters inside `<fields>` are used as indexed fields and removed from the original input events. Please see the "Add a "fields" property at the top JSON level" [here](http://dev.splunk.com/view/event-collector/SP-CAAAFB6) for details. Given we have configuration like
