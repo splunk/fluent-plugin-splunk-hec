@@ -146,6 +146,7 @@ module Fluent::Plugin
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
         c.override_headers['__splunk_app_name'] = "#{@app_name}"
         c.override_headers['__splunk_app_version'] = "#{@app_version}"
+
       end
     end
 
@@ -287,6 +288,7 @@ module Fluent::Plugin
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
         c.override_headers['__splunk_app_name'] = "#{@app_name}"
         c.override_headers['__splunk_app_version'] = "#{@app_version}"
+
       end
     end
 
