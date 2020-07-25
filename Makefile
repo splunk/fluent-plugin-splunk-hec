@@ -1,9 +1,15 @@
 VERSION := $(shell sh -c 'cat VERSION')
 
-clean: 
-	@rm -rf pkg/* docker/gem/ docker/gems/ docker/*.gem docker/licenses
+clean_pkg: 
+	@rm -rf pkg/* docker/*.gem 
 
-build: clean 
+clean_gems:
+	@rm -rf docker/gem/ docker/gems/
+
+clean: clean_pkg clean_gems
+	@rm -rf docker/licenses
+
+build: clean_pkg 
 	@bundle exec rake build
 
 docker: install-deps build
@@ -23,3 +29,4 @@ install-deps:
 unpack: build
 	@cp pkg/fluent-plugin-*.gem docker
 	@gem unpack docker/fluent-plugin-*.gem --target docker/gem
+	@cd docker && bundle install
