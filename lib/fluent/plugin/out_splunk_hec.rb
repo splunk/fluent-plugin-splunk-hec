@@ -303,12 +303,12 @@ module Fluent::Plugin
       t2 = Time.now
 
       # raise Exception to utilize Fluentd output plugin retry machanism
-      raise "Server error (#{response.code}) for POST #{@hec_api}, response: #{response.body}" if response.code.start_with?('5')
+      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if response.code.start_with?('5')
 
       # For both success response (2xx) and client errors (4xx), we will consume the chunk.
       # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
       if not response.code.start_with?('2')
-        log.error "Failed POST to #{@hec_api}, response: #{response.body}"
+        log.error "Failed POST to #{@api}, response: #{response.body}"
         log.debug { "Failed request body: #{post.body}" }
       end
 
