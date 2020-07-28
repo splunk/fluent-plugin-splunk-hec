@@ -87,6 +87,12 @@ module Fluent::Plugin
     desc 'When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, `metric_value_key` will not be removed from the original event.'
     config_param :keep_keys, :bool, default: false
 
+    desc 'App name'
+    config_param :app_name, :string, default: "hec_plugin_gem"
+
+    desc 'App version'
+    config_param :app_version, :string, default: "#{VERSION}"
+
     desc 'Define index-time fields for event data type, or metric dimensions for metric data type. Null value fields will be removed.'
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
@@ -138,6 +144,9 @@ module Fluent::Plugin
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
+        c.override_headers['__splunk_app_name'] = "#{@app_name}"
+        c.override_headers['__splunk_app_version'] = "#{@app_version}"
+
       end
     end
 
@@ -277,6 +286,9 @@ module Fluent::Plugin
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
+        c.override_headers['__splunk_app_name'] = "#{@app_name}"
+        c.override_headers['__splunk_app_version'] = "#{@app_version}"
+
       end
     end
 
@@ -291,12 +303,12 @@ module Fluent::Plugin
       t2 = Time.now
 
       # raise Exception to utilize Fluentd output plugin retry machanism
-      raise "Server error (#{response.code}) for POST #{@hec_api}, response: #{response.body}" if response.code.start_with?('5')
+      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if response.code.start_with?('5')
 
       # For both success response (2xx) and client errors (4xx), we will consume the chunk.
       # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
       if not response.code.start_with?('2')
-        log.error "Failed POST to #{@hec_api}, response: #{response.body}"
+        log.error "Failed POST to #{@api}, response: #{response.body}"
         log.debug { "Failed request body: #{post.body}" }
       end
 
