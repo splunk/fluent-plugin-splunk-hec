@@ -1,7 +1,7 @@
 PATH
   remote: gem
   specs:
-    fluent-plugin-splunk-hec (1.2.3)
+    fluent-plugin-splunk-hec (1.2.4)
       fluentd (>= 1.4)
       multi_json (~> 1.13)
       net-http-persistent (~> 3.1)
@@ -37,8 +37,8 @@ GEM
     fluent-plugin-jq (0.5.1)
       fluentd (>= 0.14.10, < 2)
       multi_json (~> 1.13)
-    fluent-plugin-kubernetes_metadata_filter (2.4.7)
-      fluentd (>= 0.14.0, < 1.10)
+    fluent-plugin-kubernetes_metadata_filter (2.5.2)
+      fluentd (>= 0.14.0, < 1.12)
       kubeclient (< 5)
       lru_redux
     fluent-plugin-prometheus (1.7.0)
@@ -158,7 +158,7 @@ DEPENDENCIES
   activesupport (~> 5.2.4.3)
   fluent-plugin-concat (= 2.4.0)
   fluent-plugin-jq (= 0.5.1)
-  fluent-plugin-kubernetes_metadata_filter (= 2.4.7)
+  fluent-plugin-kubernetes_metadata_filter (= 2.5.2)
   fluent-plugin-prometheus (= 1.7.0)
   fluent-plugin-splunk-hec!
   fluent-plugin-systemd (= 1.0.2)
