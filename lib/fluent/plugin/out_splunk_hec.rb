@@ -140,6 +140,7 @@ module Fluent::Plugin
         c.ca_file = @ca_file
         c.ca_path = @ca_path
         c.ciphers = @ssl_ciphers
+        c.proxy   = :ENV
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
