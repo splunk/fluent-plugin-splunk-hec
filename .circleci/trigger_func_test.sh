@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# trigger SCK 'master' branch to introduce this new image from this commit 
+# trigger SCK 'main' branch to introduce this new image from this commit 
 # to working version of every other component.
 ORGANIZATION=splunk
 PROJECT=splunk-connect-for-kubernetes
