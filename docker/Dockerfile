@@ -18,9 +18,7 @@ USER root
 COPY *.gem /tmp/
 COPY licenses /licenses
 
-RUN wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && \
-      chmod +x ./jq && \
-      cp jq /usr/bin
+RUN dnf install -y jq
 
 COPY Gemfile* ./
 RUN gem install bundler \
