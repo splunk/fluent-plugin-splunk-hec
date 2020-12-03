@@ -432,6 +432,10 @@ List of SSl ciphers allowed.
 
 Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default. Ensure parameter `ca_file` is not configured in order to allow insecure SSL connections when this value is set to `true`.
 
+#### consume_chunk_on_4xx_errors (bool)
+
+Specifies whether any 4xx HTTP response status code consumes the buffer chunks. If set to false, Splunk will fail to flush the buffer on such status codes. This parameter is set to `true` by default for backwards compatibility.
+
 ## About Buffer
 
 This plugin sends events to HEC using [batch mode](https://docs.splunk.com/Documentation/Splunk/7.1.0/Data/FormateventsforHTTPEventCollector#Event_data).

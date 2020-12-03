@@ -57,6 +57,9 @@ describe Fluent::Plugin::SplunkHecOutput do
       assert_nil(create_hec_output_driver('hec_host hec_token').instance.index_key)
       expect(create_hec_output_driver('hec_host hec_token').instance.index_key).is_a? String
     end
+    it 'should consume chunks on 4xx errors' do
+      expect(create_hec_output_driver('hec_host hec_token').instance.consume_chunk_on_4xx_errors).must_equal true
+    end
   end
 
   describe 'hec_host validation' do
