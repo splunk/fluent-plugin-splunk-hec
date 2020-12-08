@@ -139,6 +139,7 @@ describe Fluent::Plugin::SplunkHecOutput do
       host_key       from
       source_key     file
       sourcetype_key agent.name
+      time_key       timestamp
     CONF
       batch.each do |item|
         expect(item['index']).must_equal 'info'
@@ -147,7 +148,7 @@ describe Fluent::Plugin::SplunkHecOutput do
         expect(item['sourcetype']).must_equal 'test'
 
         JSON.load(item['event']).tap do |event|
-          %w[level from file].each { |field| expect(event).wont_include field }
+          %w[level from file timestamp].each { |field| expect(event).wont_include field }
           expect(event['agent']).wont_include 'name'
         end
       end
@@ -349,7 +350,8 @@ describe Fluent::Plugin::SplunkHecOutput do
       'agent' => {
         'name' => 'test',
         'version' => '1.0.0'
-      }
+      },
+      'timestamp' => 'time'
     }
     events = [
       ['tag.event1', event_time, { 'id' => '1st' }.merge(Marshal.load(Marshal.dump(event)))],
