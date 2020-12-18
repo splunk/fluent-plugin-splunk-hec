@@ -39,6 +39,9 @@ module Fluent::Plugin
     desc 'The HEC token.'
     config_param :hec_token, :string
 
+    desc 'The proxy to HEC'
+    config_param :proxy, :string, default: nil
+
     desc 'If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection. nil means no timeout.'
     config_param :idle_timeout, :integer, default: 5
 
@@ -140,6 +143,7 @@ module Fluent::Plugin
         c.ca_file = @ca_file
         c.ca_path = @ca_path
         c.ciphers = @ssl_ciphers
+        c.proxy = URI @proxy if @proxy
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
@@ -282,6 +286,7 @@ module Fluent::Plugin
         c.idle_timeout = @idle_timeout
         c.read_timeout = @read_timeout
         c.open_timeout = @open_timeout
+        c.proxy = URI @proxy if @proxy
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
