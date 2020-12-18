@@ -432,6 +432,10 @@ List of SSl ciphers allowed.
 
 Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default. Ensure parameter `ca_file` is not configured in order to allow insecure SSL connections when this value is set to `true`.
 
+#### proxy (string)
+
+Proxy server URI.
+
 ## About Buffer
 
 This plugin sends events to HEC using [batch mode](https://docs.splunk.com/Documentation/Splunk/7.1.0/Data/FormateventsforHTTPEventCollector#Event_data).
