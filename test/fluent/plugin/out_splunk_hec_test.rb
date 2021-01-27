@@ -220,6 +220,23 @@ describe Fluent::Plugin::SplunkHecOutput do
     end
   end
 
+  it 'should not send blank events' do
+    verify_sent_events(<<~CONF) do |batch|
+      <fields>
+        from
+        logLevel level
+        nonexist
+        log
+        file
+        value
+        id
+        agent
+      </fields>
+    CONF
+      expect(batch.length).must_equal 0
+    end
+  end
+
   describe 'metric' do
     it 'should check related configs' do
       expect(
