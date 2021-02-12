@@ -13,7 +13,7 @@ module Fluent::Plugin
     autoload :VERSION, 'fluent/plugin/out_splunk/version'
     autoload :MatchFormatter, 'fluent/plugin/out_splunk/match_formatter'
 
-    KEY_FIELDS = %w[index host source sourcetype metric_name metric_value].freeze
+    KEY_FIELDS = %w[index host source sourcetype metric_name metric_value time].freeze
     TAG_PLACEHOLDER = '${tag}'
 
     desc 'The host field for events, by default it uses the hostname of the machine that runnning fluentd. This is exclusive with `host_key`.'

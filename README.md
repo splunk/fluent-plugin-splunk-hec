@@ -260,6 +260,10 @@ Cannot set both `source` and `source_key` parameters at the same time.
 
 Field name that contains the sourcetype. Cannot set both `source` and `source_key` parameters at the same time.
 
+### time_key (string) (optional)
+
+Field name to contain Splunk event time. By default will use fluentd\'d time.
+
 ### fields (init) (optional)
 
 Lets you specify the index-time fields for the event data type, or metric dimensions for the metric data type. Null value fields are removed.
