@@ -232,6 +232,7 @@ describe Fluent::Plugin::SplunkHecOutput do
         value
         id
         agent
+        timestamp
       </fields>
     CONF
       expect(batch.length).must_equal 0
