@@ -98,6 +98,9 @@ module Fluent::Plugin
       # this is blank on purpose
     end
 
+    desc 'Indicates if 4xx errors should consume chunk'
+    config_param :consume_chunk_on_4xx_errors, :bool, :default => true
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -307,11 +310,12 @@ module Fluent::Plugin
       response = @conn.request @api, post
       t2 = Time.now
 
-      # raise Exception to utilize Fluentd output plugin retry machanism
-      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if response.code.start_with?('5')
+      raise_err = response.code.to_s.start_with?('5') || (!@consume_chunk_on_4xx_errors && response.code.to_s.start_with?('4'))
 
-      # For both success response (2xx) and client errors (4xx), we will consume the chunk.
-      # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
+      # raise Exception to utilize Fluentd output plugin retry mechanism
+      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if raise_err
+
+      # For both success response (2xx) we will consume the chunk.
       if not response.code.start_with?('2')
         log.error "Failed POST to #{@api}, response: #{response.body}"
         log.debug { "Failed request body: #{post.body}" }
