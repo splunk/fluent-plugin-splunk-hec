@@ -297,7 +297,7 @@ In this case, parameters inside `<fields>` are used as indexed fields and remove
   <fields>
     file
     level
-    app applicatioin
+    app application
   </fields>
 </match>
 ```
@@ -344,7 +344,7 @@ For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` 
   <fields>
     file
     level
-    app applicatioin
+    app application
   </fields>
 </match>
 ```
