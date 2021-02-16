@@ -182,7 +182,7 @@ module Fluent::Plugin
     end
 
     def format_event(tag, time, record)
-      MultiJson.dump({
+      d = {
         host: @host ? @host.(tag, record) : @default_host,
         # From the API reference
         # http://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTinput#services.2Fcollector
@@ -215,7 +215,12 @@ module Fluent::Plugin
             record = formatter.format(tag, time, record)
           end
           payload[:event] = convert_to_utf8 record
-      })
+      }
+      if d[:event] == "{}"
+        log.warn { "Event after formatting was blank, not sending" }
+        return ""
+      end
+      MultiJson.dump(d)
     end
 
     def format_metric(tag, time, record)
@@ -227,7 +232,7 @@ module Fluent::Plugin
         # That's why we use `to_s` here.
         time: time.to_f.to_s,
         event: 'metric'
-      }.tap do |payload| 
+      }.tap do |payload|
         if @time
           time_value = @time.(tag, record)
           # if no value is found don't override and use fluentd's time
@@ -344,7 +349,7 @@ module Fluent::Plugin
           invalid: :replace,
           undef: :replace,
           replace: @non_utf8_replacement_string)
-            else
+      else
         begin
           input.encode('utf-8')
         rescue EncodingError
