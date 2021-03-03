@@ -288,6 +288,7 @@ module Fluent::Plugin
         c.ca_file = @ca_file
         c.ca_path = @ca_path
         c.ciphers = @ssl_ciphers
+        c.proxy   = :ENV
         c.idle_timeout = @idle_timeout
         c.read_timeout = @read_timeout
         c.open_timeout = @open_timeout
