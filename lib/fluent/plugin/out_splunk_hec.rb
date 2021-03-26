@@ -63,6 +63,9 @@ module Fluent::Plugin
     desc 'List of SSL ciphers allowed.'
     config_param :ssl_ciphers, :array, default: nil
 
+    desc 'When set to true, TLS version 1.1 and above is required.'
+    config_param :require_ssl_min_version, :bool, default: true
+
     desc 'Indicates if insecure SSL connection is allowed.'
     config_param :insecure_ssl, :bool, default: false
 
@@ -144,6 +147,7 @@ module Fluent::Plugin
         c.ca_path = @ca_path
         c.ciphers = @ssl_ciphers
         c.proxy   = :ENV
+        c.min_version = OpenSSL::SSL::TLS1_1_VERSION if @require_ssl_min_version
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
@@ -292,6 +296,7 @@ module Fluent::Plugin
         c.idle_timeout = @idle_timeout
         c.read_timeout = @read_timeout
         c.open_timeout = @open_timeout
+        c.min_version = OpenSSL::SSL::TLS1_1_VERSION if @require_ssl_min_version
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
