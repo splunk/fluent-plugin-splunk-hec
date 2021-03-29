@@ -63,6 +63,9 @@ module Fluent::Plugin
     desc 'List of SSL ciphers allowed.'
     config_param :ssl_ciphers, :array, default: nil
 
+    desc 'When set to true, TLS version 1.1 and above is required.'
+    config_param :require_ssl_min_version, :bool, default: true
+
     desc 'Indicates if insecure SSL connection is allowed.'
     config_param :insecure_ssl, :bool, default: false
 
@@ -97,7 +100,10 @@ module Fluent::Plugin
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
     end
-    
+
+    desc 'Indicates if 4xx errors should consume chunk'
+    config_param :consume_chunk_on_4xx_errors, :bool, :default => true
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -140,6 +146,8 @@ module Fluent::Plugin
         c.ca_file = @ca_file
         c.ca_path = @ca_path
         c.ciphers = @ssl_ciphers
+        c.proxy   = :ENV
+        c.min_version = OpenSSL::SSL::TLS1_1_VERSION if @require_ssl_min_version
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
@@ -179,7 +187,7 @@ module Fluent::Plugin
     end
 
     def format_event(tag, time, record)
-      MultiJson.dump({
+      d = {
         host: @host ? @host.(tag, record) : @default_host,
         # From the API reference
         # http://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTinput#services.2Fcollector
@@ -212,7 +220,12 @@ module Fluent::Plugin
             record = formatter.format(tag, time, record)
           end
           payload[:event] = convert_to_utf8 record
-      })
+      }
+      if d[:event] == "{}"
+        log.warn { "Event after formatting was blank, not sending" }
+        return ""
+      end
+      MultiJson.dump(d)
     end
 
     def format_metric(tag, time, record)
@@ -224,7 +237,7 @@ module Fluent::Plugin
         # That's why we use `to_s` here.
         time: time.to_f.to_s,
         event: 'metric'
-      }.tap do |payload| 
+      }.tap do |payload|
         if @time
           time_value = @time.(tag, record)
           # if no value is found don't override and use fluentd's time
@@ -279,9 +292,11 @@ module Fluent::Plugin
         c.ca_file = @ca_file
         c.ca_path = @ca_path
         c.ciphers = @ssl_ciphers
+        c.proxy   = :ENV
         c.idle_timeout = @idle_timeout
         c.read_timeout = @read_timeout
         c.open_timeout = @open_timeout
+        c.min_version = OpenSSL::SSL::TLS1_1_VERSION if @require_ssl_min_version
 
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
@@ -302,11 +317,12 @@ module Fluent::Plugin
       response = @conn.request @api, post
       t2 = Time.now
 
-      # raise Exception to utilize Fluentd output plugin retry machanism
-      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if response.code.start_with?('5')
+      raise_err = response.code.to_s.start_with?('5') || (!@consume_chunk_on_4xx_errors && response.code.to_s.start_with?('4'))
 
-      # For both success response (2xx) and client errors (4xx), we will consume the chunk.
-      # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
+      # raise Exception to utilize Fluentd output plugin retry mechanism
+      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if raise_err
+
+      # For both success response (2xx) we will consume the chunk.
       if not response.code.start_with?('2')
         log.error "Failed POST to #{@api}, response: #{response.body}"
         log.debug { "Failed request body: #{post.body}" }
@@ -340,7 +356,7 @@ module Fluent::Plugin
           invalid: :replace,
           undef: :replace,
           replace: @non_utf8_replacement_string)
-            else
+      else
         begin
           input.encode('utf-8')
         rescue EncodingError

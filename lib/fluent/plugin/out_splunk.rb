@@ -13,7 +13,7 @@ module Fluent::Plugin
     autoload :VERSION, 'fluent/plugin/out_splunk/version'
     autoload :MatchFormatter, 'fluent/plugin/out_splunk/match_formatter'
 
-    KEY_FIELDS = %w[index host source sourcetype metric_name metric_value].freeze
+    KEY_FIELDS = %w[index host source sourcetype metric_name metric_value time].freeze
     TAG_PLACEHOLDER = '${tag}'
 
     desc 'The host field for events, by default it uses the hostname of the machine that runnning fluentd. This is exclusive with `host_key`.'
@@ -50,6 +50,9 @@ module Fluent::Plugin
     config_section :fields, init: false, multi: false, required: false do
       # this is blank on purpose
     end
+
+    desc 'Indicates if 4xx errors should consume chunk'
+    config_param :consume_chunk_on_4xx_errors, :bool, :default => true
 
     config_section :format do
       config_set_default :usage, '**'
@@ -152,11 +155,12 @@ module Fluent::Plugin
 
       @metrics[:status_counter].increment(metric_labels(status: response.code.to_s))
 
-      # raise Exception to utilize Fluentd output plugin retry mechanism
-      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if response.code.to_s.start_with?('5')
+      raise_err = response.code.to_s.start_with?('5') || (!@consume_chunk_on_4xx_errors && response.code.to_s.start_with?('4'))
 
-      # For both success response (2xx) and client errors (4xx), we will consume the chunk.
-      # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
+      # raise Exception to utilize Fluentd output plugin retry mechanism
+      raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if raise_err
+
+      # For both success response (2xx) we will consume the chunk.
       unless response.code.to_s.start_with?('2')
         log.error "#{self.class}: Failed POST to #{@api}, response: #{response.body}"
         log.error { "#{self.class}: Failed request body: #{post.body}" }

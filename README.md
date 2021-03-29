@@ -260,6 +260,10 @@ Cannot set both `source` and `source_key` parameters at the same time.
 
 Field name that contains the sourcetype. Cannot set both `source` and `source_key` parameters at the same time.
 
+### time_key (string) (optional)
+
+Field name to contain Splunk event time. By default will use fluentd\'d time.
+
 ### fields (init) (optional)
 
 Lets you specify the index-time fields for the event data type, or metric dimensions for the metric data type. Null value fields are removed.
@@ -293,7 +297,7 @@ In this case, parameters inside `<fields>` are used as indexed fields and remove
   <fields>
     file
     level
-    app applicatioin
+    app application
   </fields>
 </match>
 ```
@@ -340,7 +344,7 @@ For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` 
   <fields>
     file
     level
-    app applicatioin
+    app application
   </fields>
 </match>
 ```
@@ -431,6 +435,14 @@ List of SSl ciphers allowed.
 #### insecure_ssl (bool)
 
 Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default. Ensure parameter `ca_file` is not configured in order to allow insecure SSL connections when this value is set to `true`.
+
+#### require_ssl_min_version (bool)
+
+When set to true, TLS version 1.1 and above is required.
+
+#### consume_chunk_on_4xx_errors (bool)
+
+Specifies whether any 4xx HTTP response status code consumes the buffer chunks. If set to false, Splunk will fail to flush the buffer on such status codes. This parameter is set to `true` by default for backwards compatibility.
 
 ## About Buffer
 
