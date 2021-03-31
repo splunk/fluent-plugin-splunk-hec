@@ -209,7 +209,7 @@ module Fluent::Plugin
       # This loop looks dump, but it is used to suppress the unused parameter configuration warning
       # Learned from `filter_record_transformer`.
       conf.elements.select { |element| element.name == 'fields' }.each do |element|
-        element.each_pair { |k, _v| element.key?(k) }
+        element.each_pair { |k, _v| element.has_key?(k) }
       end
 
       return unless @fields
