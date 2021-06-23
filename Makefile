@@ -1,5 +1,5 @@
 VERSION := $(shell sh -c 'cat VERSION')
-NODEJS_VERSION := 14.15.1
+NODEJS_VERSION := 14.17.1
 
 clean_pkg: 
 	@rm -rf pkg/* docker/*.gem 
