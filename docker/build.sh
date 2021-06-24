@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 TAG=$1
-NODEJS_VERSION=14.15.1
+NODEJS_VERSION=14.17.1
 
 # Install dependecies
 gem install bundler
