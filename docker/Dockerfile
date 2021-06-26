@@ -23,9 +23,9 @@ RUN dnf install -y jq
 
 COPY Gemfile* ./
 RUN yum update -y \
-   && npm install -g n \
-   && yum remove -y nodejs \
-   && n ${NODEJS_VERSION} \
+  #  && npm install -g n \
+   && yum remove -y nodejs npm \
+  #  && n ${NODEJS_VERSION} \
    && gem install bundler \
    && gem unpack /tmp/*.gem --target gem \
    && bundle install 
