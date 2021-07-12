@@ -100,11 +100,11 @@ module Fluent::Plugin
         write_to_splunk(chunk)
       end
 
-      @metrics[:record_counter].increment(metric_labels, chunk.size_of_events)
-      @metrics[:bytes_counter].increment(metric_labels, chunk.bytesize)
-      @metrics[:write_records_histogram].observe(metric_labels, chunk.size_of_events)
-      @metrics[:write_bytes_histogram].observe(metric_labels, chunk.bytesize)
-      @metrics[:write_latency_histogram].observe(metric_labels, t)
+      @metrics[:record_counter].increment(labels: metric_labels, by: chunk.size_of_events)
+      @metrics[:bytes_counter].increment(labels: metric_labels, by: chunk.bytesize)
+      @metrics[:write_records_histogram].observe(chunk.size_of_events, labels: metric_labels)
+      @metrics[:write_bytes_histogram].observe(chunk.bytesize, labels: metric_labels, )
+      @metrics[:write_latency_histogram].observe(t, labels: metric_labels, )
     end
 
     def write_to_splunk(_chunk)
@@ -153,7 +153,7 @@ module Fluent::Plugin
     def process_response(response, _request_body)
       log.trace { "[Response] POST #{@api}: #{response.inspect}" }
 
-      @metrics[:status_counter].increment(metric_labels(status: response.code.to_s))
+      @metrics[:status_counter].increment(labels: metric_labels(status: response.code.to_s))
 
       raise_err = response.code.to_s.start_with?('5') || (!@consume_chunk_on_4xx_errors && response.code.to_s.start_with?('4'))
 
@@ -235,28 +235,34 @@ module Fluent::Plugin
 
       @metrics = {
         record_counter: register_metric(::Prometheus::Client::Counter.new(
-                                          :splunk_output_write_records_count,
-                                          'The number of log records being sent'
+                                          :splunk_output_write_records_count, docstring:
+                                          'The number of log records being sent',
+                                          labels: metric_label_keys
                                         )),
         bytes_counter: register_metric(::Prometheus::Client::Counter.new(
-                                         :splunk_output_write_bytes_count,
-                                         'The number of log bytes being sent'
+                                         :splunk_output_write_bytes_count, docstring:
+                                         'The number of log bytes being sent',
+                                         labels: metric_label_keys
                                        )),
         status_counter: register_metric(::Prometheus::Client::Counter.new(
-                                          :splunk_output_write_status_count,
-                                          'The count of sends by response_code'
+                                          :splunk_output_write_status_count, docstring:
+                                          'The count of sends by response_code',
+                                          labels: metric_label_keys(status: "")
                                         )),
         write_bytes_histogram: register_metric(::Prometheus::Client::Histogram.new(
-                                                 :splunk_output_write_payload_bytes,
-                                                 'The size of the write payload in bytes', {}, [1024, 23_937, 47_875, 95_750, 191_500, 383_000, 766_000, 1_149_000]
+                                                 :splunk_output_write_payload_bytes, docstring:
+                                                 'The size of the write payload in bytes', buckets: [1024, 23_937, 47_875, 95_750, 191_500, 383_000, 766_000, 1_149_000],
+                                                 labels: metric_label_keys
                                                )),
         write_records_histogram: register_metric(::Prometheus::Client::Histogram.new(
-                                                   :splunk_output_write_payload_records,
-                                                   'The number of records written per write', {}, [1, 10, 25, 100, 200, 300, 500, 750, 1000, 1500]
+                                                   :splunk_output_write_payload_records, docstring:
+                                                   'The number of records written per write', buckets: [1, 10, 25, 100, 200, 300, 500, 750, 1000, 1500],
+                                                   labels: metric_label_keys
                                                  )),
         write_latency_histogram: register_metric(::Prometheus::Client::Histogram.new(
-                                                   :splunk_output_write_latency_seconds,
-                                                   'The latency of writes'
+                                                   :splunk_output_write_latency_seconds, docstring:
+                                                   'The latency of writes',
+                                                   labels: metric_label_keys
                                                  ))
       }
     end
@@ -264,6 +270,10 @@ module Fluent::Plugin
     # Tag metrics with the type string that was used to register the plugin
     def metric_labels(other_labels = {})
       @metric_labels.merge other_labels
+    end
+
+    def metric_label_keys(other_labels = {})
+      (@metric_labels.merge other_labels).keys
     end
 
     # Encode as UTF-8. If 'coerce_to_utf8' is set to true in the config, any
