@@ -1,5 +1,4 @@
 VERSION := $(shell sh -c 'cat VERSION')
-NODEJS_VERSION := 14.15.1
 
 clean_pkg: 
 	@rm -rf pkg/* docker/*.gem 
@@ -17,7 +16,7 @@ docker: install-deps build
 	@cp pkg/fluent-plugin-*.gem docker
 	@mkdir -p docker/licenses
 	@cp -rp LICENSE docker/licenses/
-	@docker build --no-cache --pull --build-arg VERSION=$(VERSION) --build-arg NODEJS_VERSION=$(NODEJS_VERSION) -t splunk/fluentd-hec:$(VERSION) ./docker
+	@docker build --no-cache --pull --build-arg VERSION=$(VERSION) -t splunk/fluentd-hec:$(VERSION) ./docker
 
 unit-test:
 	@bundle exec rake test
