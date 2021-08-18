@@ -2,10 +2,10 @@ PATH
   remote: .
   specs:
     fluent-plugin-splunk-hec (1.2.7)
-      fluentd (>= 1.4)
-      multi_json (~> 1.13)
-      net-http-persistent (~> 3.1)
-      openid_connect (~> 1.1.8)
+      fluentd (>= 1.13.3)
+      multi_json (~> 1.15)
+      net-http-persistent (~> 4.0.1)
+      openid_connect (~> 1.2)
       prometheus-client (>= 2.1.0)
 
 GEM
@@ -31,7 +31,7 @@ GEM
     crack (0.4.5)
       rexml
     docile (1.4.0)
-    fluentd (1.13.2)
+    fluentd (1.13.3)
       bundler
       cool.io (>= 1.4.5, < 2.0.0)
       http_parser.rb (>= 0.5.1, < 0.8.0)
@@ -59,9 +59,9 @@ GEM
     minitest (5.14.4)
     msgpack (1.4.2)
     multi_json (1.15.0)
-    net-http-persistent (3.1.0)
+    net-http-persistent (4.0.1)
       connection_pool (~> 2.2)
-    openid_connect (1.1.8)
+    openid_connect (1.2.0)
       activemodel
       attr_required (>= 1.0.0)
       json-jwt (>= 1.5.0)
@@ -79,7 +79,7 @@ GEM
     prometheus-client (2.1.0)
     public_suffix (4.0.6)
     rack (2.2.3)
-    rack-oauth2 (1.17.0)
+    rack-oauth2 (1.18.0)
       activesupport
       attr_required
       httpclient
@@ -142,7 +142,7 @@ DEPENDENCIES
   bundler (~> 2.0)
   fluent-plugin-splunk-hec!
   minitest (~> 5.0)
-  rake (>= 12.0)
+  rake (>= 12.3.3)
   rubocop (~> 0.63.1)
   simplecov
   test-unit (~> 3.0)
