@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -17,7 +17,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          ruby-version: 2.6
+          ruby-version: 2.6.1
 
       - name: Install dependencies
         run: |
@@ -25,7 +25,7 @@ jobs:
 
       - name: Builder
         run: |
-          rake build -t -v
+          bundle exec rake build -t -v
           cp -R pkg /tmp
 
       - name: Cache pkg
@@ -35,7 +35,7 @@ jobs:
           key: ${{ runner.os }}-build
 
   unit-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - build
     steps:
@@ -75,7 +75,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build kube-objects image
+      - name: Build fluentd-hec image
         run: |
           sed -i 's/VERSION=$VERSION -t splunk\/fluentd-hec:$TAG .\/docker/VERSION=$VERSION -t fluentd-hec:$TAG .\/docker/' docker/build.sh
           sudo docker/build.sh $GITHUB_RUN_ID
