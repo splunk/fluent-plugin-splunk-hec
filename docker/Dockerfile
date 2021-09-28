@@ -25,9 +25,11 @@ RUN yum update -y \
    && yum remove -y nodejs npm \
    && gem install bundler \
    && gem unpack /tmp/*.gem --target gem \
-   && bundle install 
+   && bundle install \
+   && rpm -e python3-urllib3-* python3-requests-* subscription-manager-* \
+   && rpm -e --nodeps python3-pip-wheel-*
 
- RUN groupadd -r $FLUENT_USER && \
+RUN groupadd -r $FLUENT_USER && \
    useradd -r -g $FLUENT_USER $FLUENT_USER && \
    mkdir -p /fluentd/log /fluentd/etc /fluentd/plugins &&\
    chown -R $FLUENT_USER /fluentd && chgrp -R $FLUENT_USER /fluentd
