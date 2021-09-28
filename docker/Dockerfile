@@ -26,8 +26,7 @@ RUN yum update -y \
    && gem install bundler \
    && gem unpack /tmp/*.gem --target gem \
    && bundle install \
-   && rpm -e python3-urllib3-* python3-requests-* subscription-manager-* \
-   && rpm -e --nodeps python3-pip-wheel-*
+   && rpm -e --nodeps python3-urllib3-* python3-requests-* python3-libxml2-* python3-dmidecode-* subscription-manager-* libwebp-* libwebp-devel-* file-libs-* glib2-* libjpeg-turbo-devel-* libjpeg-turbo-* mariadb-connector-c-config-* mariadb-connector-c-* mariadb-connector-c-devel-* rsync-* sqlite-libs-* sqlite-devel-* sqlite-* libxml2-* libxml2-devel-* oniguruma-* libX11-* libX11-common-* libX11-devel-* libX11-xcb-* lz4-libs-*
 
 RUN groupadd -r $FLUENT_USER && \
    useradd -r -g $FLUENT_USER $FLUENT_USER && \
