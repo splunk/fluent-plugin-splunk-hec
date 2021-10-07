@@ -18,6 +18,9 @@ docker: install-deps build
 	@cp -rp LICENSE docker/licenses/
 	@docker build --no-cache --pull --build-arg VERSION=$(VERSION) -t splunk/fluentd-hec:$(VERSION) ./docker
 
+docker-rebuild:
+	@docker build --build-arg VERSION=$(VERSION) -t splunk/fluentd-hec:$(VERSION) ./docker
+	
 unit-test:
 	@bundle exec rake test
 
