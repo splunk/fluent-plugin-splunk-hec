@@ -18,7 +18,7 @@ echo "Deploying k8s-connect with latest changes"
 helm install ci-sck --set global.splunk.hec.token=$CI_SPLUNK_HEC_TOKEN \
 --set global.splunk.hec.host=$CI_SPLUNK_HOST \
 --set kubelet.serviceMonitor.https=true \
---set splunk-kubernetes-logging.image.repository=fluentd-hec \
+--set splunk-kubernetes-logging.image.tag=$GITHUB_RUN_ID \
 --set splunk-kubernetes-logging.image.pullPolicy=IfNotPresent \
 -f ci_scripts/sck_values.yml helm-chart/splunk-connect-for-kubernetes
 #wait for deployment to finish
