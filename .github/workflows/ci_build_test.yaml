@@ -75,10 +75,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build fluentd-hec image
+      - name: Prepare container build
+        id: prep
         run: |
-          sed -i 's/VERSION=$VERSION -t splunk\/fluentd-hec:$TAG .\/docker/VERSION=$VERSION -t fluentd-hec:$TAG .\/docker/' docker/build.sh
-          sudo docker/build.sh $GITHUB_RUN_ID
+          VERSION=`cat VERSION`
+          TAGS=splunk/fluentd-hec:recent
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=version::${VERSION}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Build multi-arch kubernetes-metrics image
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ${{ steps.prep.outputs.tags }}
+          build-args: VERSION=${{ steps.prep.outputs.version }}
+
+      - name: Check kubernetes-metrics image
+        run: |
           docker image ls
 
       - name: Setup Minikube
