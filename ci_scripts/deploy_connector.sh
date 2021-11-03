@@ -14,11 +14,13 @@ cd /opt
 git clone https://github.com/splunk/splunk-connect-for-kubernetes.git
 cd splunk-connect-for-kubernetes
 
+minikube image load splunk/fluentd-hec:recent
+
 echo "Deploying k8s-connect with latest changes"
 helm install ci-sck --set global.splunk.hec.token=$CI_SPLUNK_HEC_TOKEN \
 --set global.splunk.hec.host=$CI_SPLUNK_HOST \
 --set kubelet.serviceMonitor.https=true \
---set splunk-kubernetes-logging.image.tag=$GITHUB_RUN_ID \
+--set splunk-kubernetes-logging.image.tag=recent \
 --set splunk-kubernetes-logging.image.pullPolicy=IfNotPresent \
 -f ci_scripts/sck_values.yml helm-chart/splunk-connect-for-kubernetes
 #wait for deployment to finish

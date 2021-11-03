@@ -79,7 +79,7 @@ jobs:
         id: prep
         run: |
           VERSION=`cat VERSION`
-          TAGS=splunk/fluentd-hec:$GITHUB_RUN_ID
+          TAGS=splunk/fluentd-hec:recent
           echo ::set-output name=tags::${TAGS}
           echo ::set-output name=version::${VERSION}
 
