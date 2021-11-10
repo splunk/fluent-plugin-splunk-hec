@@ -13,3 +13,4 @@ docker/licenses/
 docker/gem/
 docker/gems/
 docker/.bundle/
+.idea/
