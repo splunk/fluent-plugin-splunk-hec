@@ -9,12 +9,14 @@ require 'fluent/plugin/out_splunk'
 require 'openssl'
 require 'multi_json'
 require 'net/http/persistent'
+require 'securerandom'
 
 module Fluent::Plugin
   class SplunkHecOutput < SplunkOutput
     Fluent::Plugin.register_output('splunk_hec', self)
 
     helpers :formatter
+    helpers :timer
 
     autoload :VERSION, "fluent/plugin/out_splunk_hec/version"
     autoload :MatchFormatter, "fluent/plugin/out_splunk_hec/match_formatter"
@@ -101,9 +103,6 @@ module Fluent::Plugin
       # this is blank on purpose
     end
 
-    desc 'Indicates if 4xx errors should consume chunk'
-    config_param :consume_chunk_on_4xx_errors, :bool, :default => true
-
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
@@ -124,6 +123,12 @@ module Fluent::Plugin
     DESC
     config_param :non_utf8_replacement_string, :string, :default => ' '
 
+    desc 'Use the HEC acknowledgment feature'
+    config_param :hec_ack_enabled, :bool, default: false
+
+    desc 'The HEC channel to use with the acknowledgment feature'
+    config_param :hec_channel, :string, default: SecureRandom.uuid
+
     def initialize
       super
       @default_host = Socket.gethostname
@@ -132,13 +137,14 @@ module Fluent::Plugin
 
     def configure(conf)
       super
-
+      @hec_api_ack = construct_ack_api
       check_metric_configs
       pick_custom_format_method
     end
 
     def start
       super
+
       @conn = Net::HTTP::Persistent.new.tap do |c|
         c.verify_mode = @insecure_ssl ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
         c.cert = OpenSSL::X509::Certificate.new File.read(@client_cert) if @client_cert
@@ -152,10 +158,12 @@ module Fluent::Plugin
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
-        c.override_headers['__splunk_app_name'] = "#{@app_name}"
-        c.override_headers['__splunk_app_version'] = "#{@app_version}"
-
+        c.override_headers['__splunk_app_name'] = @app_name
+        c.override_headers['__splunk_app_version'] = @app_version
+        c.override_headers['X-Splunk-Request-Channel'] = @hec_channel
       end
+
+      start_ack_checker if @hec_ack_enabled
     end
 
     def shutdown
@@ -169,6 +177,26 @@ module Fluent::Plugin
 
     def multi_workers_ready?
       true
+    end
+
+    def prefer_delayed_commit
+      @hec_ack_enabled
+    end
+
+    def try_write(chunk)
+      log.trace { "#{self.class}: Received new chunk for delayed commit, size=#{chunk.read.bytesize}" }
+
+      t = Benchmark.realtime do
+        ack_id = write_to_splunk(chunk)
+      end
+
+      ack_checker_create_entry(chunk.chunk_id, ack_id)
+
+      @metrics[:record_counter].increment(metric_labels, chunk.size_of_events)
+      @metrics[:bytes_counter].increment(metric_labels, chunk.bytesize)
+      @metrics[:write_records_histogram].observe(metric_labels, chunk.size_of_events)
+      @metrics[:write_bytes_histogram].observe(metric_labels, chunk.bytesize)
+      @metrics[:write_latency_histogram].observe(metric_labels, t)
     end
 
     protected
@@ -284,6 +312,12 @@ module Fluent::Plugin
       raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
     end
 
+    def construct_ack_api
+      URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector/ack")
+    rescue StandardError
+      raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
+    end
+
     def new_connection
       Net::HTTP::Persistent.new.tap do |c|
         c.verify_mode = @insecure_ssl ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
@@ -330,6 +364,8 @@ module Fluent::Plugin
 
       log.debug { "[Response] Chunk: #{dump_unique_id_hex(chunk.unique_id)} Size: #{post.body.bytesize} Response: #{response.inspect} Duration: #{t2 - t1}" }
       process_response(response, post.body)
+
+      return MultiJson.load(response.body).fetch('ackID',nil)
     end
 
     # Encode as UTF-8. If 'coerce_to_utf8' is set to true in the config, any
@@ -367,6 +403,109 @@ module Fluent::Plugin
           raise
         end
       end
+    end
+
+    def start_ack_checker
+      @AckEntry = Struct.new(:chunk_id, :ack_id, :insert_time, :timeout) do
+        def expired?(now = Fluent::Clock.now)
+          now > insert_time + timeout
+        end
+      end
+
+      @ack_queue_mutex = Mutex.new
+      @ack_queue = []
+
+      timer_execute(:ack_checker, 5) do
+        ack_work = ack_checker_get_work
+
+        return if ack_work.empty?
+
+        ack_ids_to_check = []
+
+        ack_work.each do |ack_entry|
+          ack_ids_to_check.push(ack_entry.ack_id)
+        end
+
+        saved_time = Fluent::Clock.now
+
+        succsessful_ack_ids = get_successful_ack_ids(ack_ids_to_check)
+        log.debug("Of #{ack_ids_to_check.count} to check #{succsessful_ack_ids.count} were succfessfully acknowledged.")
+
+        ack_work.each do |ack_entry|
+          if succsessful_ack_ids.include? ack_entry.ack_id
+            log.debug("Ack id #{ack_entry.ack_id} successfully acknowledged.")
+            commit_write(ack_entry.chunk_id)
+            ack_checker_remove_entry(ack_entry)
+          elsif ack_entry.expired?(saved_time)
+            log.warn("Ack id #{ack_entry.ack_id} not acknowledged and timeout reached. Roling back the commit.")
+            rollback_commit(ack_entry.chunk_id)
+            ack_checker_remove_entry(ack_entry)
+          else
+            log.debug("Ack id #{ack_entry.ack_id} not yet successful. Retrying.")
+          end
+        end
+      end
+    end
+
+    # @return [Array<AckEntry>] List of AckEntry objects
+    def ack_checker_get_work
+      @ack_queue_mutex.synchronize { @ack_queue.dup }
+    end
+
+    # Adds work to the ack_checker work queue
+    #
+    # @param chunk_id [Binary] Id of the chunk, retrievable by chunk.chunk_id
+    # @param ack_id [Integer] Id received from Splunk HEC when the chunk was submitted
+    # @param insert_time [UnixTime] Defaults to now
+    # @param timeout [Integer] Timeout in seconds, defaults to `delayed_commit_timeout`
+    def ack_checker_create_entry(chunk_id, ack_id, insert_time = Fluent::Clock.now, timeout = @delayed_commit_timeout)
+      @ack_queue_mutex.synchronize do
+        @ack_queue.push(@AckEntry.new(
+          chunk_id,
+          ack_id,
+          insert_time,
+          timeout
+        ))
+      end
+    end
+
+    # Removes an entry from the ack_checker work queue
+    #
+    # @param ack_entry [AckEntry] The entry to be removed
+    def ack_checker_remove_entry(ack_entry)
+      @ack_queue_mutex.synchronize do
+        @ack_queue.delete(ack_entry)
+      end
+    end
+
+    # @param ack_ids [Array<Integer>]] Array of ack IDs to validate
+    # @return Array<Integer> List of sucessful acknowledgments
+    def get_successful_ack_ids(ack_ids)
+      get = Net::HTTP::Get.new @hec_api_ack.request_uri
+      get.body = MultiJson.dump({ 'acks' => ack_ids })
+      log.debug { "Sending #{get.body.bytesize} bytes to Splunk." }
+
+      log.trace { "GET #{@hec_api_ack} body=#{get.body}" }
+      response = @hec_conn.request "#{@hec_api_ack}", get
+      log.debug { "[Response] GET #{@hec_api_ack}: #{response.inspect}" }
+
+      # raise Exception to utilize Fluentd output plugin retry machanism
+      raise "Server error (#{response.code}) for GET #{@hec_api_ack}, response: #{response.body}" if response.code.start_with?('5')
+
+      # For both success response (2xx) and client errors (4xx), we will consume the chunk.
+      # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
+      if not response.code.start_with?('2')
+       log.error "Failed GET from #{@hec_api_ack}, response: #{response.body}"
+       log.debug { "Failed request body: #{get.body}" }
+      end
+
+      successful_acks = []
+
+      MultiJson.load(response.body)['acks'].each do |ack_id_str, bool|
+        successful_acks.push(ack_id_str.to_i) if bool
+      end
+
+      return successful_acks
     end
   end
 end
