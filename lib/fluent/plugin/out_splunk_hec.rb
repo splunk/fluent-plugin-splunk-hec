@@ -96,7 +96,7 @@ module Fluent::Plugin
     config_param :app_name, :string, default: "hec_plugin_gem"
 
     desc 'App version'
-    config_param :app_version, :string, default: "#{VERSION}"
+    config_param :app_version, :string, default: (VERSION).to_s
 
     desc 'Define index-time fields for event data type, or metric dimensions for metric data type. Null value fields will be removed.'
     config_section :fields, init: false, multi: false, required: false do
@@ -162,7 +162,6 @@ module Fluent::Plugin
         c.override_headers['__splunk_app_version'] = @app_version
         c.override_headers['X-Splunk-Request-Channel'] = @hec_channel
       end
-
       start_ack_checker if @hec_ack_enabled
     end
 
@@ -186,17 +185,18 @@ module Fluent::Plugin
     def try_write(chunk)
       log.trace { "#{self.class}: Received new chunk for delayed commit, size=#{chunk.read.bytesize}" }
 
-      t = Benchmark.realtime do
-        ack_id = write_to_splunk(chunk)
-      end
+#      t = Benchmark.realtime do
+#        ack_id = write_to_splunk(chunk)
+#      end
 
-      ack_checker_create_entry(chunk.chunk_id, ack_id)
+      ack_id = write_to_splunk(chunk)
+      ack_checker_create_entry(chunk.unique_id, ack_id)
 
-      @metrics[:record_counter].increment(metric_labels, chunk.size_of_events)
-      @metrics[:bytes_counter].increment(metric_labels, chunk.bytesize)
-      @metrics[:write_records_histogram].observe(metric_labels, chunk.size_of_events)
-      @metrics[:write_bytes_histogram].observe(metric_labels, chunk.bytesize)
-      @metrics[:write_latency_histogram].observe(metric_labels, t)
+ #     @metrics[:record_counter].increment(metric_labels, chunk.size_of_events)
+ #     @metrics[:bytes_counter].increment(metric_labels, chunk.bytesize)
+ #     @metrics[:write_records_histogram].observe(metric_labels, chunk.size_of_events)
+ #     @metrics[:write_bytes_histogram].observe(metric_labels, chunk.bytesize)
+ #     @metrics[:write_latency_histogram].observe(metric_labels, t)
     end
 
     protected
@@ -223,13 +223,11 @@ module Fluent::Plugin
         # That's why we use the to_string function here.
         time: time.to_f.to_s
         }.tap { |payload|
-          if @time
-            time_value = @time.(tag, record)
-            # if no value is found don't override and use fluentd's time
-            if !time_value.nil?
-              payload[:time] = time_value
-            end
-          end
+        if @time
+          time_value = @time.(tag, record)
+          # if no value is found don't override and use fluentd's time
+          payload[:time] = time_value unless time_value.nil?
+        end
 
           payload[:index] = @index.(tag, record) if @index
           payload[:source] = @source.(tag, record) if @source
@@ -269,9 +267,7 @@ module Fluent::Plugin
         if @time
           time_value = @time.(tag, record)
           # if no value is found don't override and use fluentd's time
-          if !time_value.nil?
-            payload[:time] = time_value
-          end
+          payload[:time] = time_value unless time_value.nil?
         end
       end
       payload[:index] = @index.call(tag, record) if @index
@@ -335,8 +331,8 @@ module Fluent::Plugin
         c.override_headers['Content-Type'] = 'application/json'
         c.override_headers['User-Agent'] = "fluent-plugin-splunk_hec_out/#{VERSION}"
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
-        c.override_headers['__splunk_app_name'] = "#{@app_name}"
-        c.override_headers['__splunk_app_version'] = "#{@app_version}"
+        c.override_headers['__splunk_app_name'] = @app_name.to_s
+        c.override_headers['__splunk_app_version'] = @app_version.to_s
 
       end
     end
@@ -357,15 +353,15 @@ module Fluent::Plugin
       raise "Server error (#{response.code}) for POST #{@api}, response: #{response.body}" if raise_err
 
       # For both success response (2xx) we will consume the chunk.
-      if not response.code.start_with?('2')
+      unless response.code.start_with?('2')
         log.error "Failed POST to #{@api}, response: #{response.body}"
         log.debug { "Failed request body: #{post.body}" }
       end
 
       log.debug { "[Response] Chunk: #{dump_unique_id_hex(chunk.unique_id)} Size: #{post.body.bytesize} Response: #{response.inspect} Duration: #{t2 - t1}" }
       process_response(response, post.body)
-
-      return MultiJson.load(response.body).fetch('ackID',nil)
+      # example response body {"text":"Success","code":0,"ackId":6}
+      return MultiJson.load(response.body).fetch('ackId', nil)
     end
 
     # Encode as UTF-8. If 'coerce_to_utf8' is set to true in the config, any
@@ -416,32 +412,33 @@ module Fluent::Plugin
       @ack_queue = []
 
       timer_execute(:ack_checker, 5) do
-        ack_work = ack_checker_get_work
+        #       ack_work = ack_checker_get_work
+        ack_work = @ack_queue_mutex.synchronize { @ack_queue.dup }
 
-        return if ack_work.empty?
-
+        #return if ack_work.empty?
+        #
         ack_ids_to_check = []
-
-        ack_work.each do |ack_entry|
-          ack_ids_to_check.push(ack_entry.ack_id)
-        end
-
-        saved_time = Fluent::Clock.now
-
-        succsessful_ack_ids = get_successful_ack_ids(ack_ids_to_check)
-        log.debug("Of #{ack_ids_to_check.count} to check #{succsessful_ack_ids.count} were succfessfully acknowledged.")
-
-        ack_work.each do |ack_entry|
-          if succsessful_ack_ids.include? ack_entry.ack_id
-            log.debug("Ack id #{ack_entry.ack_id} successfully acknowledged.")
-            commit_write(ack_entry.chunk_id)
-            ack_checker_remove_entry(ack_entry)
-          elsif ack_entry.expired?(saved_time)
-            log.warn("Ack id #{ack_entry.ack_id} not acknowledged and timeout reached. Roling back the commit.")
-            rollback_commit(ack_entry.chunk_id)
-            ack_checker_remove_entry(ack_entry)
-          else
-            log.debug("Ack id #{ack_entry.ack_id} not yet successful. Retrying.")
+        unless ack_work.empty?
+          ack_work.each do |ack_entry|
+            ack_ids_to_check.push(ack_entry.ack_id) unless ack_entry.nil?
+          end
+          saved_time = Fluent::Clock.now
+          log.debug { "checking ack_ids: #{ack_ids_to_check}" }
+          succsessful_ack_ids = get_successful_ack_ids(ack_ids_to_check)
+          log.debug("Of #{ack_ids_to_check.count} to check #{succsessful_ack_ids.count} were successfully acknowledged.")
+          ack_work.each do |ack_entry|
+            if succsessful_ack_ids.include? ack_entry.ack_id
+              log.debug("Ack id #{ack_entry.ack_id} successfully acknowledged.")
+              commit_write(ack_entry.chunk_id)
+              ack_checker_remove_entry(ack_entry)
+            elsif ack_entry.expired?(saved_time)
+              log.warn("Ack id #{ack_entry.ack_id} not acknowledged and timeout reached. Rolling back the commit.")
+              ## TODO is this rollback_commit or rollback_count ?
+              rollback_count(ack_entry.chunk_id)
+              ack_checker_remove_entry(ack_entry)
+            else
+              log.debug("Ack id #{ack_entry.ack_id} not yet successful. Retrying.")
+            end
           end
         end
       end
@@ -479,29 +476,34 @@ module Fluent::Plugin
     end
 
     # @param ack_ids [Array<Integer>]] Array of ack IDs to validate
-    # @return Array<Integer> List of sucessful acknowledgments
+    # @return Array<Integer> List of successful acknowledgments
     def get_successful_ack_ids(ack_ids)
-      get = Net::HTTP::Get.new @hec_api_ack.request_uri
-      get.body = MultiJson.dump({ 'acks' => ack_ids })
-      log.debug { "Sending #{get.body.bytesize} bytes to Splunk." }
+      successful_acks = []
+      if ack_ids.empty?
+        return successful_acks
+      end
+      post = Net::HTTP::Post.new @hec_api_ack.request_uri
+      post.body = MultiJson.dump({ 'acks' => ack_ids })
+      log.debug { "Sending #{post.body.bytesize} bytes to Splunk." }
 
-      log.trace { "GET #{@hec_api_ack} body=#{get.body}" }
-      response = @hec_conn.request "#{@hec_api_ack}", get
-      log.debug { "[Response] GET #{@hec_api_ack}: #{response.inspect}" }
+      log.trace { "POST #{@hec_api_ack} body=#{get.body}" }
+      ## TODO remove
+      log.debug { "Sending #{@conn.request} to Splunk." }
+      response = @conn.request @hec_api_ack.to_s, post
+      log.debug { "[Response] POST #{@hec_api_ack}: #{response.inspect}" }
 
-      # raise Exception to utilize Fluentd output plugin retry machanism
-      raise "Server error (#{response.code}) for GET #{@hec_api_ack}, response: #{response.body}" if response.code.start_with?('5')
+      # raise Exception to utilize Fluentd output plugin retry mechanism
+      raise "Server error (#{response.code}) for POST #{@hec_api_ack}, response: #{response.body}" if response.code.start_with?('5')
 
       # For both success response (2xx) and client errors (4xx), we will consume the chunk.
-      # Because there probably a bug in the code if we get 4xx errors, retry won't do any good.
-      if not response.code.start_with?('2')
-       log.error "Failed GET from #{@hec_api_ack}, response: #{response.body}"
-       log.debug { "Failed request body: #{get.body}" }
+      # Because there probably a bug in the code if we POST 4xx errors, retry won't do any good.
+      unless response.code.start_with?('2')
+        log.error "Failed POST from #{@hec_api_ack}, response: #{response.body}"
+        log.debug { "Failed request body: #{post.body}" }
+        return successful_acks
       end
 
-      successful_acks = []
-
-      MultiJson.load(response.body)['acks'].each do |ack_id_str, bool|
+      MultiJson.load("#{response.body}")['acks'].each do |ack_id_str, bool|
         successful_acks.push(ack_id_str.to_i) if bool
       end
 
