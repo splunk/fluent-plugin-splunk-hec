@@ -126,6 +126,12 @@ module Fluent::Plugin
     desc 'Use the HEC acknowledgment feature'
     config_param :hec_ack_enabled, :bool, default: false
 
+    desc 'HEC Ack check interval'
+    config_param :hec_ack_interval, :integer, default: 5
+
+    desc 'HEC Ack check delay, set this only if hec_ack_enabled is also enabled. The amount of time fluentd will wait before checking if ack was received in seconds'
+    config_param :hec_ack_delay, :integer, default: 1
+
     desc 'The HEC channel to use with the acknowledgment feature'
     config_param :hec_channel, :string, default: SecureRandom.uuid
 
@@ -176,10 +182,6 @@ module Fluent::Plugin
 
     def multi_workers_ready?
       true
-    end
-
-    def prefer_delayed_commit
-      @hec_ack_enabled
     end
 
     def try_write(chunk)
@@ -410,31 +412,35 @@ module Fluent::Plugin
 
       @ack_queue_mutex = Mutex.new
       @ack_queue = []
-
-      timer_execute(:ack_checker, 5) do
+      timer_execute(:ack_checker, @hec_ack_interval) do
         #       ack_work = ack_checker_get_work
         ack_work = @ack_queue_mutex.synchronize { @ack_queue.dup }
 
         #return if ack_work.empty?
-        #
         ack_ids_to_check = []
         unless ack_work.empty?
           ack_work.each do |ack_entry|
-            ack_ids_to_check.push(ack_entry.ack_id) unless ack_entry.nil?
+            ack_ids_to_check.push(ack_entry.ack_id)
           end
+          ## remove anything with no ack
+          # TODO: warn the user?
+          ack_ids_to_check = ack_ids_to_check.compact
           saved_time = Fluent::Clock.now
           log.debug { "checking ack_ids: #{ack_ids_to_check}" }
-          succsessful_ack_ids = get_successful_ack_ids(ack_ids_to_check)
-          log.debug("Of #{ack_ids_to_check.count} to check #{succsessful_ack_ids.count} were successfully acknowledged.")
+          successful_ack_ids = get_successful_ack_ids(ack_ids_to_check)
+          log.debug("Of #{ack_ids_to_check.count} to check #{successful_ack_ids.count} were successfully acknowledged.")
           ack_work.each do |ack_entry|
-            if succsessful_ack_ids.include? ack_entry.ack_id
+            if successful_ack_ids.include? ack_entry.ack_id
               log.debug("Ack id #{ack_entry.ack_id} successfully acknowledged.")
               commit_write(ack_entry.chunk_id)
               ack_checker_remove_entry(ack_entry)
             elsif ack_entry.expired?(saved_time)
               log.warn("Ack id #{ack_entry.ack_id} not acknowledged and timeout reached. Rolling back the commit.")
-              ## TODO is this rollback_commit or rollback_count ?
-              rollback_count(ack_entry.chunk_id)
+              rollback_write(ack_entry.chunk_id)
+              ack_checker_remove_entry(ack_entry)
+            elsif !ack_ids_to_check.include?(ack_entry.ack_id)
+              log.warn("Ack id #{ack_entry.ack_id} not acknowledged because there is no ack, the token may not have it enabled.")
+              commit_write(ack_entry.chunk_id)
               ack_checker_remove_entry(ack_entry)
             else
               log.debug("Ack id #{ack_entry.ack_id} not yet successful. Retrying.")
@@ -479,18 +485,16 @@ module Fluent::Plugin
     # @return Array<Integer> List of successful acknowledgments
     def get_successful_ack_ids(ack_ids)
       successful_acks = []
-      if ack_ids.empty?
-        return successful_acks
-      end
+      return successful_acks if ack_ids.empty?
+
+      sleep(@hec_ack_delay)
       post = Net::HTTP::Post.new @hec_api_ack.request_uri
       post.body = MultiJson.dump({ 'acks' => ack_ids })
-      log.debug { "Sending #{post.body.bytesize} bytes to Splunk." }
-
-      log.trace { "POST #{@hec_api_ack} body=#{get.body}" }
-      ## TODO remove
-      log.debug { "Sending #{@conn.request} to Splunk." }
       response = @conn.request @hec_api_ack.to_s, post
       log.debug { "[Response] POST #{@hec_api_ack}: #{response.inspect}" }
+      log.debug { "Sending #{post.body.bytesize} bytes to Splunk." }
+      log.trace { "POST #{@hec_api_ack} body=#{get.body}" }
+
 
       # raise Exception to utilize Fluentd output plugin retry mechanism
       raise "Server error (#{response.code}) for POST #{@hec_api_ack}, response: #{response.body}" if response.code.start_with?('5')
