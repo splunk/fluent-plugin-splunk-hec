@@ -96,15 +96,23 @@ module Fluent::Plugin
     def write(chunk)
       log.trace { "#{self.class}: Received new chunk, size=#{chunk.read.bytesize}" }
 
-      t = Benchmark.realtime do
-        write_to_splunk(chunk)
+      if @hec_ack_enabled
+        ack_id = []
+        t = Benchmark.realtime do
+          ack_id = write_to_splunk(chunk)
+        end
+        ack_checker_create_entry(chunk.unique_id, ack_id)
+      else
+        t = Benchmark.realtime do
+          write_to_splunk(chunk)
+        end
       end
 
       @metrics[:record_counter].increment(labels: metric_labels, by: chunk.size_of_events)
       @metrics[:bytes_counter].increment(labels: metric_labels, by: chunk.bytesize)
       @metrics[:write_records_histogram].observe(chunk.size_of_events, labels: metric_labels)
-      @metrics[:write_bytes_histogram].observe(chunk.bytesize, labels: metric_labels, )
-      @metrics[:write_latency_histogram].observe(t, labels: metric_labels, )
+      @metrics[:write_bytes_histogram].observe(chunk.bytesize, labels: metric_labels)
+      @metrics[:write_latency_histogram].observe(t, labels: metric_labels)
     end
 
     def write_to_splunk(_chunk)

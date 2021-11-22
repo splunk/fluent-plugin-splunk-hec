@@ -129,9 +129,6 @@ module Fluent::Plugin
     desc 'HEC Ack check interval'
     config_param :hec_ack_interval, :integer, default: 5
 
-    desc 'HEC Ack check delay, set this only if hec_ack_enabled is also enabled. The amount of time fluentd will wait before checking if ack was received in seconds'
-    config_param :hec_ack_delay, :integer, default: 1
-
     desc 'The HEC channel to use with the acknowledgment feature'
     config_param :hec_channel, :string, default: SecureRandom.uuid
 
@@ -169,7 +166,7 @@ module Fluent::Plugin
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
         c.override_headers['__splunk_app_name'] = @app_name
         c.override_headers['__splunk_app_version'] = @app_version
-        c.override_headers['X-Splunk-Request-Channel'] = @hec_channel
+        c.override_headers['X-Splunk-Request-Channel'] = @hec_channel if @hec_ack_enabled
       end
       start_ack_checker if @hec_ack_enabled
     end
@@ -186,12 +183,7 @@ module Fluent::Plugin
     def multi_workers_ready?
       true
     end
-
-    def try_write(chunk)
-      log.trace { "#{self.class}: Received new chunk for delayed commit, size=#{chunk.read.bytesize}" }
-      ack_id = write_to_splunk(chunk)
-      ack_checker_create_entry(chunk.unique_id, ack_id)
-    end
+    
 
     protected
 
@@ -475,7 +467,6 @@ module Fluent::Plugin
       successful_acks = []
       return successful_acks if ack_ids.empty?
 
-      sleep(@hec_ack_delay)
       post = Net::HTTP::Post.new @hec_api_ack.request_uri
       post.body = MultiJson.dump({ 'acks' => ack_ids })
       response = @conn.request @hec_api_ack.to_s, post
