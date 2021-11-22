@@ -135,6 +135,9 @@ module Fluent::Plugin
     desc 'The HEC channel to use with the acknowledgment feature'
     config_param :hec_channel, :string, default: SecureRandom.uuid
 
+    desc 'The HEC ack timeout'
+    config_param :hec_delayed_commit_timeout, :integer, default: 30
+
     def initialize
       super
       @default_host = Socket.gethostname
@@ -445,8 +448,8 @@ module Fluent::Plugin
     # @param chunk_id [Binary] Id of the chunk, retrievable by chunk.chunk_id
     # @param ack_id [Integer] Id received from Splunk HEC when the chunk was submitted
     # @param insert_time [UnixTime] Defaults to now
-    # @param timeout [Integer] Timeout in seconds, defaults to `delayed_commit_timeout`
-    def ack_checker_create_entry(chunk_id, ack_id, insert_time = Fluent::Clock.now, timeout = @delayed_commit_timeout)
+    # @param timeout [Integer] Timeout in seconds, defaults to `hec_delayed_commit_timeout`
+    def ack_checker_create_entry(chunk_id, ack_id, insert_time = Fluent::Clock.now, timeout = @hec_delayed_commit_timeout)
       @ack_queue_mutex.synchronize do
         @ack_queue.push(@AckEntry.new(
           chunk_id,
