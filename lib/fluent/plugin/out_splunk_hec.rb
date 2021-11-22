@@ -186,19 +186,8 @@ module Fluent::Plugin
 
     def try_write(chunk)
       log.trace { "#{self.class}: Received new chunk for delayed commit, size=#{chunk.read.bytesize}" }
-
-#      t = Benchmark.realtime do
-#        ack_id = write_to_splunk(chunk)
-#      end
-
       ack_id = write_to_splunk(chunk)
       ack_checker_create_entry(chunk.unique_id, ack_id)
-
- #     @metrics[:record_counter].increment(metric_labels, chunk.size_of_events)
- #     @metrics[:bytes_counter].increment(metric_labels, chunk.bytesize)
- #     @metrics[:write_records_histogram].observe(metric_labels, chunk.size_of_events)
- #     @metrics[:write_bytes_histogram].observe(metric_labels, chunk.bytesize)
- #     @metrics[:write_latency_histogram].observe(metric_labels, t)
     end
 
     protected
