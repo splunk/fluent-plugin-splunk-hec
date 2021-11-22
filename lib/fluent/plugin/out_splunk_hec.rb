@@ -402,17 +402,13 @@ module Fluent::Plugin
       @ack_queue_mutex = Mutex.new
       @ack_queue = []
       timer_execute(:ack_checker, @hec_ack_interval) do
-        #       ack_work = ack_checker_get_work
         ack_work = @ack_queue_mutex.synchronize { @ack_queue.dup }
-
-        #return if ack_work.empty?
         ack_ids_to_check = []
         unless ack_work.empty?
           ack_work.each do |ack_entry|
             ack_ids_to_check.push(ack_entry.ack_id)
           end
           ## remove anything with no ack
-          # TODO: warn the user?
           ack_ids_to_check = ack_ids_to_check.compact
           saved_time = Fluent::Clock.now
           log.debug { "checking ack_ids: #{ack_ids_to_check}" }
