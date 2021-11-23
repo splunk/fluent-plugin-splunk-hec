@@ -36,6 +36,9 @@ module Fluent::Plugin
     desc 'The port number to HEC, or HEC load balancer.'
     config_param :hec_port, :integer, default: 8088
 
+    desc 'If splunk instance is behind an application gateway, provide this as endpoint to splunk. For example, in "https://mydomain.com:8088/splunk/", hec_host="mydomain.com", hec_port="8088", hec_host_external_endpoint="splunk"'
+    config_param :hec_host_external_endpoint, :string, default: ""
+
     desc 'The HEC token.'
     config_param :hec_token, :string
 
@@ -279,7 +282,9 @@ module Fluent::Plugin
     end
 
     def construct_api
-      URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+      endpoint = @hec_host_external_endpoint.delete_prefix("/").delete_suffix("/")
+      endpoint = @hec_host_external_endpoint.empty? ? "" : "/#{endpoint}"
+      URI("#{@protocol}://#{@hec_host}:#{@hec_port}#{endpoint}/services/collector")
     rescue StandardError
       raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
     end
