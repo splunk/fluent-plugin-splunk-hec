@@ -279,7 +279,9 @@ module Fluent::Plugin
     end
 
     def construct_api
-      URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+      host = @hec_host.delete_prefix("/").delete_suffix("/").split("/", 2)
+      host_suffix = host[1].nil? ? "" : "/#{host[1]}"
+      URI("https://#{host[0]}:#{@hec_port}#{host_suffix}/services/collector")
     rescue StandardError
       raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
     end
