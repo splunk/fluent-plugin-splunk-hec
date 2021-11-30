@@ -103,6 +103,9 @@ module Fluent::Plugin
       # this is blank on purpose
     end
 
+    desc 'Indicates if 4xx errors should consume chunk'
+    config_param :consume_chunk_on_4xx_errors, :bool, :default => true
+
     config_section :format do
       config_set_default :usage, '**'
       config_set_default :@type, 'json'
