@@ -36,6 +36,9 @@ module Fluent::Plugin
     desc 'The port number to HEC, or HEC load balancer.'
     config_param :hec_port, :integer, default: 8088
 
+    desc 'Full url to connect tosplunk. Example: https://mydomain.com:8088/apps/splunk'
+    config_param :full_url, :string, default: ''
+
     desc 'The HEC token.'
     config_param :hec_token, :string
 
@@ -279,9 +282,11 @@ module Fluent::Plugin
     end
 
     def construct_api
-      host = @hec_host.delete_prefix("/").delete_suffix("/").split("/", 2)
-      host_suffix = host[1].nil? ? "" : "/#{host[1]}"
-      URI("https://#{host[0]}:#{@hec_port}#{host_suffix}/services/collector")
+      if @full_url.empty?
+        URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+      else
+        URI("#{@full_url.delete_suffix("/")}/services/collector")
+      end
     rescue StandardError
       raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
     end
