@@ -64,7 +64,7 @@ describe Fluent::Plugin::SplunkHecOutput do
 
   describe 'hec_host validation' do
     describe 'invalid host' do
-      it 'should require hec_host' do
+      it 'should require hec_host or full_url' do
         expect { create_hec_output_driver }.must_raise Fluent::ConfigError
       end
 
@@ -74,6 +74,17 @@ describe Fluent::Plugin::SplunkHecOutput do
     describe 'good host' do
       it {
         expect(create_hec_output_driver('hec_host splunk.com').instance.hec_host).must_equal 'splunk.com'
+      }
+    end
+  end
+
+  describe 'full_url validation' do
+    describe 'invalid full_url' do
+      it { expect { create_hec_output_driver(full_url: '%bad-host%.com') }.must_raise Fluent::ConfigError }
+    end
+    describe 'good full_url' do
+      it { 
+        expect(create_hec_output_driver('full_url https://splunk.com').instance.full_url).must_equal 'https://splunk.com'
       }
     end
   end
