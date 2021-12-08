@@ -31,10 +31,13 @@ module Fluent::Plugin
     config_param :protocol, :enum, list: %i[http https], default: :https
 
     desc 'The hostname/IP to HEC, or HEC load balancer.'
-    config_param :hec_host, :string
+    config_param :hec_host, :string, default: ''
 
     desc 'The port number to HEC, or HEC load balancer.'
     config_param :hec_port, :integer, default: 8088
+
+    desc 'Full url to connect tosplunk. Example: https://mydomain.com:8088/apps/splunk'
+    config_param :full_url, :string, default: ''
 
     desc 'The HEC token.'
     config_param :hec_token, :string
@@ -132,7 +135,7 @@ module Fluent::Plugin
 
     def configure(conf)
       super
-
+      raise Fluent::ConfigError, 'One of `hec_host` or `full_url` is required.' if @hec_host.empty? && @full_url.empty?
       check_metric_configs
       pick_custom_format_method
     end
@@ -279,9 +282,17 @@ module Fluent::Plugin
     end
 
     def construct_api
-      URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+      if @full_url.empty?
+        URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+      else
+        URI("#{@full_url.delete_suffix("/")}/services/collector")
+      end
     rescue StandardError
-      raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
+      if @full_url.empty?
+        raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
+      else
+        raise Fluent::ConfigError, "full_url (#{@full_url}) is invalid."
+      end
     end
 
     def new_connection
