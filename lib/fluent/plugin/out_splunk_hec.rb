@@ -323,10 +323,13 @@ module Fluent::Plugin
       post.body = chunk.read
       log.debug { "[Sending] Chunk: #{dump_unique_id_hex(chunk.unique_id)}(#{post.body.bytesize}B)." }
       log.trace { "POST #{@api} body=#{post.body}" }
-
-      t1 = Time.now
-      response = @conn.request @api, post
-      t2 = Time.now
+      begin
+        t1 = Time.now
+        response = @conn.request @api, post
+        t2 = Time.now
+      rescue Net::HTTP::Persistent::Error => e
+        raise e.cause
+      end
 
       raise_err = response.code.to_s.start_with?('5') || (!@consume_chunk_on_4xx_errors && response.code.to_s.start_with?('4'))
 
