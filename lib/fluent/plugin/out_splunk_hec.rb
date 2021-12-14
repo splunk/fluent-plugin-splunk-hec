@@ -40,7 +40,7 @@ module Fluent::Plugin
     config_param :full_url, :string, default: ''
 
     desc 'The HEC token.'
-    config_param :hec_token, :string
+    config_param :hec_token, :string, secret: true
 
     desc 'If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection. nil means no timeout.'
     config_param :idle_timeout, :integer, default: 5
