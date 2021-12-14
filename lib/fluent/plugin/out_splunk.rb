@@ -193,8 +193,8 @@ module Fluent::Plugin
           v = instance_variable_get "@#{f}"
           next unless v
 
-          if v == TAG_PLACEHOLDER
-            instance_variable_set "@#{f}", ->(tag, _) { tag }
+          if v.include? TAG_PLACEHOLDER
+            instance_variable_set "@#{f}", ->(tag, _) { v.gsub(TAG_PLACEHOLDER, tag) }
           else
             instance_variable_set "@#{f}", ->(_, _) { v }
           end
