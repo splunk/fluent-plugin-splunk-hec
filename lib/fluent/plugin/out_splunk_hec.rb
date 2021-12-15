@@ -31,13 +31,16 @@ module Fluent::Plugin
     config_param :protocol, :enum, list: %i[http https], default: :https
 
     desc 'The hostname/IP to HEC, or HEC load balancer.'
-    config_param :hec_host, :string
+    config_param :hec_host, :string, default: ''
 
     desc 'The port number to HEC, or HEC load balancer.'
     config_param :hec_port, :integer, default: 8088
 
+    desc 'Full url to connect tosplunk. Example: https://mydomain.com:8088/apps/splunk'
+    config_param :full_url, :string, default: ''
+
     desc 'The HEC token.'
-    config_param :hec_token, :string
+    config_param :hec_token, :string, secret: true
 
     desc 'If a connection has not been used for this number of seconds it will automatically be reset upon the next use to avoid attempting to send to a closed connection. nil means no timeout.'
     config_param :idle_timeout, :integer, default: 5
@@ -132,7 +135,7 @@ module Fluent::Plugin
 
     def configure(conf)
       super
-
+      raise Fluent::ConfigError, 'One of `hec_host` or `full_url` is required.' if @hec_host.empty? && @full_url.empty?
       check_metric_configs
       pick_custom_format_method
     end
@@ -279,9 +282,17 @@ module Fluent::Plugin
     end
 
     def construct_api
-      URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+      if @full_url.empty?
+        URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+      else
+        URI("#{@full_url.delete_suffix("/")}/services/collector")
+      end
     rescue StandardError
-      raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
+      if @full_url.empty?
+        raise Fluent::ConfigError, "hec_host (#{@hec_host}) and/or hec_port (#{@hec_port}) are invalid."
+      else
+        raise Fluent::ConfigError, "full_url (#{@full_url}) is invalid."
+      end
     end
 
     def new_connection
@@ -312,10 +323,13 @@ module Fluent::Plugin
       post.body = chunk.read
       log.debug { "[Sending] Chunk: #{dump_unique_id_hex(chunk.unique_id)}(#{post.body.bytesize}B)." }
       log.trace { "POST #{@api} body=#{post.body}" }
-
-      t1 = Time.now
-      response = @conn.request @api, post
-      t2 = Time.now
+      begin
+        t1 = Time.now
+        response = @conn.request @api, post
+        t2 = Time.now
+      rescue Net::HTTP::Persistent::Error => e
+        raise e.cause
+      end
 
       raise_err = response.code.to_s.start_with?('5') || (!@consume_chunk_on_4xx_errors && response.code.to_s.start_with?('4'))
 
