@@ -14,10 +14,10 @@ build: clean_pkg
 
 .PHONY: docker
 docker:
-	@docker build --no-cache --pull --build-arg VERSION=$(VERSION) -t splunk/fluentd-hec:$(VERSION) . -f docker/Dockerfile
+	@docker buildx build --no-cache --pull --platform linux/amd64 -o type=image,name=splunk/fluentd-hec:$(VERSION),push=false --build-arg VERSION=$(VERSION) . -f docker/Dockerfile
 
 docker-rebuild:
-	@docker build --build-arg VERSION=$(VERSION) -t splunk/fluentd-hec:$(VERSION) ./docker
+	@docker buildx build --platform linux/amd64 -o type=image,name=splunk/fluentd-hec:$(VERSION),push=false --build-arg VERSION=$(VERSION) . -f docker/Dockerfile
 	
 unit-test:
 	@bundle exec rake test
