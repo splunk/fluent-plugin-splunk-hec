@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
-require 'fluent/output'
 require 'fluent/plugin/output'
 require 'fluent/plugin/formatter'
 require 'prometheus/client'
 require 'benchmark'
 
 module Fluent::Plugin
-  class SplunkOutput < Fluent::BufferedOutput
+  class SplunkOutput < Fluent::Plugin::Output
     helpers :formatter
 
     autoload :VERSION, 'fluent/plugin/out_splunk/version'
@@ -100,9 +99,9 @@ module Fluent::Plugin
         write_to_splunk(chunk)
       end
 
-      @metrics[:record_counter].increment(labels: metric_labels, by: chunk.size_of_events)
+      @metrics[:record_counter].increment(labels: metric_labels, by: chunk.size)
       @metrics[:bytes_counter].increment(labels: metric_labels, by: chunk.bytesize)
-      @metrics[:write_records_histogram].observe(chunk.size_of_events, labels: metric_labels)
+      @metrics[:write_records_histogram].observe(chunk.size, labels: metric_labels)
       @metrics[:write_bytes_histogram].observe(chunk.bytesize, labels: metric_labels, )
       @metrics[:write_latency_histogram].observe(t, labels: metric_labels, )
     end
