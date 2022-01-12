@@ -41,6 +41,10 @@ module Fluent::Plugin
       super
     end
 
+    def write(chunk)
+      super
+    end
+
     def construct_api
       uri = "https://#{@ingest_api_host}/#{@ingest_api_tenant}#{@ingest_api_events_endpoint}"
       URI(uri)
@@ -101,7 +105,7 @@ module Fluent::Plugin
     end
 
     def write_to_splunk(chunk)
-      log.trace "#{self.class}: In write() with #{chunk.size_of_events} records and #{chunk.bytesize} bytes "
+      log.trace "#{self.class}: In write() with #{chunk.size} records and #{chunk.bytesize} bytes "
       # ingest API is an array of json objects
       body = "[#{chunk.read.chomp(',')}]"
       @conn ||= new_connection

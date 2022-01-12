@@ -140,6 +140,10 @@ module Fluent::Plugin
       pick_custom_format_method
     end
 
+    def write(chunk)
+      super
+    end
+
     def start
       super
       @conn = Net::HTTP::Persistent.new.tap do |c|
