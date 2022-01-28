@@ -31,7 +31,7 @@ RUN mkdir /licenses
 COPY --from=builder /app/LICENSE /licenses/LICENSE
 
 RUN dnf install -y jq
-
+RUN gem update cgi
 COPY --from=builder /app/docker/Gemfile* ./
 RUN yum update -y \
    && yum remove -y nodejs npm \
