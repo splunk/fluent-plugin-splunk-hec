@@ -11,14 +11,13 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (6.1.4.1)
-      activesupport (= 6.1.4.1)
-    activesupport (6.1.4.1)
+    activemodel (7.0.1)
+      activesupport (= 7.0.1)
+    activesupport (7.0.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-      zeitwerk (~> 2.3)
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
     aes_key_wrap (1.1.0)
@@ -45,7 +44,7 @@ GEM
     hashdiff (1.0.1)
     http_parser.rb (0.8.0)
     httpclient (2.8.3)
-    i18n (1.8.11)
+    i18n (1.9.1)
       concurrent-ruby (~> 1.0)
     json-jwt (1.13.0)
       activesupport (>= 4.2)
@@ -54,8 +53,8 @@ GEM
     mail (2.7.1)
       mini_mime (>= 0.1.1)
     mini_mime (1.1.2)
-    minitest (5.14.4)
-    msgpack (1.4.2)
+    minitest (5.15.0)
+    msgpack (1.4.4)
     multi_json (1.15.0)
     net-http-persistent (3.1.0)
       connection_pool (~> 2.2)
@@ -81,7 +80,7 @@ GEM
       rack (>= 2.1.0)
     rake (13.0.6)
     rexml (3.2.5)
-    serverengine (2.2.4)
+    serverengine (2.2.5)
       sigdump (~> 0.2.2)
     sigdump (0.2.4)
     simplecov (0.21.2)
@@ -95,7 +94,7 @@ GEM
       activesupport (>= 3)
       attr_required (>= 0.0.5)
       httpclient (>= 2.4)
-    test-unit (3.5.0)
+    test-unit (3.5.3)
       power_assert
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
@@ -116,7 +115,6 @@ GEM
       hashdiff
     webrick (1.7.0)
     yajl-ruby (1.4.1)
-    zeitwerk (2.5.1)
 
 PLATFORMS
   ruby
