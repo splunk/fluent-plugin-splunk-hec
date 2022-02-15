@@ -67,8 +67,9 @@ jobs:
       CI_INDEX_EVENTS: ci_events
       CI_INDEX_OBJECTS: ci_objects
       CI_INDEX_METRICS: ci_metrics
-      KUBERNETES_VERSION: v1.15.2
-      MINIKUBE_VERSION: v1.21.0
+      KUBERNETES_VERSION: v1.23.2
+      MINIKUBE_VERSION: v1.24.0
+      MINIKUBE_NODE_COUNTS: 2
       GITHUB_ACTIONS: true
 
     steps:
@@ -121,7 +122,7 @@ jobs:
           chmod +x minikube
           sudo mv minikube /usr/local/bin/
           # Start Minikube and Wait
-          minikube start --driver=docker --container-runtime=docker --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --no-vtx-check
+          minikube start --driver=docker --container-runtime=docker --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --no-vtx-check -n=${MINIKUBE_NODE_COUNTS}
           export JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'
           until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do
             sleep 1;
@@ -130,13 +131,15 @@ jobs:
       - name: Install Splunk
         run: |
           # Wait until minikube is ready
-          kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
           export JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'
           until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do
             echo "wait for minikube ready ..."
             sleep 1;
           done
           kubectl get nodes
+          until kubectl get sa | grep -q 'default'; do
+            sleep 1;
+          done
           # Install Splunk on minikube
           kubectl apply -f ci_scripts/k8s-splunk.yml
           # Wait until splunk is ready
@@ -189,4 +192,5 @@ jobs:
           	--splunkd-url https://$CI_SPLUNK_HOST:8089 \
           	--splunk-user admin \
           	--splunk-password $CI_SPLUNK_PASSWORD \
-          	-p no:warnings -s
+            --nodes-count $MINIKUBE_NODE_COUNTS\
+          	-p no:warnings -s -n auto
