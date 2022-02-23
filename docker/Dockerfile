@@ -33,9 +33,12 @@ COPY --from=builder /app/LICENSE /licenses/LICENSE
 RUN dnf install -y jq
 
 COPY --from=builder /app/docker/Gemfile* ./
+RUN gem update date cgi
+RUN rm -f /usr/share/gems/specifications/default/cgi-0.1.0.gemspec /usr/share/gems/specifications/default/date-3.0.0.gemspec 
 RUN yum update -y \
    && yum remove -y nodejs npm \
    && gem install bundler \
+   && gem uninstall -i /usr/share/gems bundler \
    && gem unpack /tmp/*.gem --target gem \
    && bundle install \
    && yum groupremove -y "Development Tools" \
