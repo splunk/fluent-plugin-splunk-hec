@@ -1,7 +1,7 @@
 PATH
   remote: gem
   specs:
-    fluent-plugin-splunk-hec (1.2.10)
+    fluent-plugin-splunk-hec (1.2.11)
       fluentd (>= 1.4)
       multi_json (~> 1.13)
       net-http-persistent (~> 3.1)
@@ -23,7 +23,6 @@ GEM
     aes_key_wrap (1.1.0)
     attr_required (1.0.1)
     bindata (2.4.10)
-    cgi (0.3.1)
     concurrent-ruby (1.1.9)
     connection_pool (2.2.5)
     cool.io (1.7.1)
@@ -163,7 +162,6 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport (~> 5.2.4.3)
-  cgi (>= 0.3)
   fluent-plugin-concat (= 2.4.0)
   fluent-plugin-jq (= 0.5.1)
   fluent-plugin-kubernetes_metadata_filter (>= 2.9.2)
@@ -181,4 +179,4 @@ DEPENDENCIES
   rack (>= 2.1.4)
 
 BUNDLED WITH
-   2.2.21
+   2.2.32
