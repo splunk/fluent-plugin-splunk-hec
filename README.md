@@ -421,11 +421,11 @@ The private key for this client.
 
 #### ca_file (string)
 
-The path to a file containing a PEM-format CA certificate.
+The path to a file containing CA cerificates in PEM format. The plugin will verify the TLS server certificate presented by Splunk against the certificates in this file, unless verification is disabled by the `ssl_insecure` option.
 
 #### ca_path (string)
 
-The path to a directory containing CA certificates in PEM format.
+The path to a directory containing CA certificates in PEM format. The plugin will verify the TLS server certificate presented by Splunk against the certificates in this file, unless verification is disabled by the `ssl_insecure` option.
 
 #### ciphers (array)
 
@@ -433,11 +433,11 @@ List of SSl ciphers allowed.
 
 #### insecure_ssl (bool)
 
-Specifies whether an insecure SSL connection is allowed. If set to false, Splunk does not verify an insecure server certificate. This parameter is set to `false` by default. Ensure parameter `ca_file` is not configured in order to allow insecure SSL connections when this value is set to `true`.
+Specifies whether an insecure SSL connection is allowed. If set to `false` (the default), the plugin will verify the TLS server certificate presented by Splunk against the CA certificates provided by the `ca_file`/`ca_path` options, and reject the certificate if if verification fails.
 
 #### require_ssl_min_version (bool)
 
-When set to true, TLS version 1.1 and above is required.
+When set to `true` (the default), the plugin will require TLSv1.1 or later for its connection to Splunk.
 
 #### consume_chunk_on_4xx_errors (bool)
 
