@@ -401,6 +401,7 @@ The following parameters can be used for tuning HTTP connections:
 The default is five seconds. If a connection has not been used for five seconds, it is automatically reset at next use, in order to avoid attempting to send to a closed connection. Specifiy `nil` to prohibit any timeouts. 
 
 #### read_timeout (integer)
+
 The amount of time allowed between reading two chunks from the socket. The default value is `nil`, which means no timeout. 
 
 #### open_timeout (integer)
@@ -441,7 +442,7 @@ When set to `true` (the default), the plugin will require TLSv1.1 or later for i
 
 #### consume_chunk_on_4xx_errors (bool)
 
-Specifies whether any 4xx HTTP response status code consumes the buffer chunks. If set to false, Splunk will fail to flush the buffer on such status codes. This parameter is set to `true` by default for backwards compatibility.
+Specifies whether any 4xx HTTP response status code consumes the buffer chunks. If set to `false`, Splunk will fail to flush the buffer on such status codes. This parameter is set to `true` by default for backwards compatibility.
 
 ## About Buffer
 
