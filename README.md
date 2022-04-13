@@ -1,13 +1,13 @@
 # fluent-plugin-splunk-hec
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) in 2 modes:<br/>
-1) Via Splunk's [HEC (HTTP Event Collector) API](http://dev.splunk.com/view/event-collector/SP-CAAAE7F)<br/> 
+1) Via Splunk's [HEC (HTTP Event Collector) API](http://dev.splunk.com/view/event-collector/SP-CAAAE7F)<br/>
 2) Via the Splunk Cloud Services (SCS) [Ingest API](https://sdc.splunkbeta.com/reference/api/ingest/v1beta2)
 
 ## Installation
 
 ### RubyGems
-``` 
+```
 $ gem install fluent-plugin-splunk-hec
 ```
 ### Bundler
@@ -157,7 +157,7 @@ This value must be set to `splunk_hec` when using HEC API and to `splunk_ingest_
 
 #### protocol (enum) (optional)
 
-This is the protocol to use for calling the HEC API. Available values are: http, https. This parameter is 
+This is the protocol to use for calling the HEC API. Available values are: http, https. This parameter is
 set to `https` by default.
 
 ### hec_host (string) (required)
@@ -171,6 +171,10 @@ The port number for the HEC token or the HEC load balancer. The default value is
 ### hec_token (string) (required)
 
 Identifier for the HEC token.
+
+### hec_endpoint (string) (optional)
+
+The HEC REST API endpoint to use. The default value is `services/collector`.
 
 ### metrics_from_event (bool) (optional)
 
@@ -194,31 +198,31 @@ If `coerce_to_utf8` is set to `true`, any non-UTF-8 character is replaced by the
 
 ### Parameters for `splunk_ingest_api`
 
-### service_client_identifier: (optional) (string) 
+### service_client_identifier: (optional) (string)
 
 Splunk uses the client identifier to make authorized requests to the ingest API.
 
-### service_client_secret_key: (string) 
+### service_client_secret_key: (string)
 
 The client identifier uses this authorization to make requests to the ingest API.
 
-### token_endpoint: (string) 
+### token_endpoint: (string)
 
 This value indicates which endpoint Splunk should look to for the authorization token necessary for requests to the ingest API.
 
-### ingest_api_host: (string) 
+### ingest_api_host: (string)
 
 Indicates which url/hostname to use for requests to the ingest API.
 
-### ingest_api_tenant: (string) 
+### ingest_api_tenant: (string)
 
 Indicates which tenant Splunk should use for requests to the ingest API.
 
-### ingest_api_events_endpoint: (string) 
+### ingest_api_events_endpoint: (string)
 
 Indicates which endpoint to use for requests to the ingest API.
 
-### debug_http: (bool) 
+### debug_http: (bool)
 Set to True if you want to debug requests and responses to ingest API. Default is false.
 
 ### Parameters for both `splunk_hec` and `splunk_ingest_api`
@@ -330,7 +334,7 @@ If a parameter has just a key, it means its value is exactly the same as the key
 
 #### When `data_type` is `metric`
 
-For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` is not presented, the original input event will be used as dimensions. If an empty `<fields></fields>` is presented, no dimension is sent. For example, given the following configuration: 
+For metrics, parameters inside `<fields>` are used as dimensions. If `<fields>` is not presented, the original input event will be used as dimensions. If an empty `<fields></fields>` is presented, no dimension is sent. For example, given the following configuration:
 
 ```
 <match **>
@@ -381,7 +385,7 @@ Multiple `<format>` sections can be defined to use different formatters for diff
   </format>
 ```
 
-This example: 
+This example:
 - Formats events with tags that start with `sometag.` with the `single_value` formatter
 - Formats events with tags `some.othertag` with the `csv` formatter
 - Formats all other events with the `json` formatter (the default formatter)
@@ -398,7 +402,7 @@ The following parameters can be used for tuning HTTP connections:
 
 #### idle_timeout (integer)
 
-The default is five seconds. If a connection has not been used for five seconds, it is automatically reset at next use, in order to avoid attempting to send to a closed connection. Specifiy `nil` to prohibit any timeouts. 
+The default is five seconds. If a connection has not been used for five seconds, it is automatically reset at next use, in order to avoid attempting to send to a closed connection. Specifiy `nil` to prohibit any timeouts.
 
 #### read_timeout (integer)
 
@@ -457,4 +461,4 @@ Here are some hints:
 
 ## License
 
-Please see [LICENSE](LICENSE). 
+Please see [LICENSE](LICENSE).
