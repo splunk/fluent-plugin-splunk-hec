@@ -4,7 +4,7 @@ PATH
     fluent-plugin-splunk-hec (1.2.12)
       fluentd (>= 1.4)
       multi_json (~> 1.13)
-      net-http-persistent (~> 3.1)
+      net-http-persistent (~> 4.0)
       openid_connect (~> 1.1.8)
       prometheus-client (>= 2.1.0)
 
@@ -56,7 +56,7 @@ GEM
     minitest (5.15.0)
     msgpack (1.4.5)
     multi_json (1.15.0)
-    net-http-persistent (3.1.0)
+    net-http-persistent (4.0.1)
       connection_pool (~> 2.2)
     openid_connect (1.1.8)
       activemodel
