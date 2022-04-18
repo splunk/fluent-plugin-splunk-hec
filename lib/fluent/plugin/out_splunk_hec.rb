@@ -169,8 +169,8 @@ module Fluent::Plugin
     end
 
     def shutdown
+      @conn.shutdown if not @conn.nil?
       super
-      @conn.shutdown
     end
 
     def format(tag, time, record)
