@@ -1,7 +1,7 @@
 PATH
   remote: gem
   specs:
-    fluent-plugin-splunk-hec (1.2.12)
+    fluent-plugin-splunk-hec (1.2.13)
       fluentd (>= 1.4)
       multi_json (~> 1.13)
       net-http-persistent (~> 4.0)
@@ -72,7 +72,7 @@ GEM
     http-form_data (2.3.0)
     http-parser (1.2.3)
       ffi-compiler (>= 1.0, < 2.0)
-    http_parser.rb (0.5.3)
+    http_parser.rb (0.8.0)
     httpclient (2.8.3)
     i18n (1.9.1)
       concurrent-ruby (~> 1.0)
@@ -170,7 +170,7 @@ DEPENDENCIES
   fluent-plugin-splunk-hec!
   fluent-plugin-systemd (= 1.0.2)
   fluentd (>= 1.14.5)
-  http_parser.rb (= 0.5.3)
+  http_parser.rb (= 0.8.0)
   multi_json (~> 1.13)
   net-http-persistent (~> 4.0)
   oj (= 3.11.2)

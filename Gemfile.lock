@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fluent-plugin-splunk-hec (1.2.12)
+    fluent-plugin-splunk-hec (1.2.13)
       fluentd (>= 1.4)
       multi_json (~> 1.13)
       net-http-persistent (~> 4.0)
@@ -29,7 +29,7 @@ GEM
     crack (0.4.5)
       rexml
     docile (1.4.0)
-    fluentd (1.14.5)
+    fluentd (1.14.6)
       bundler
       cool.io (>= 1.4.5, < 2.0.0)
       http_parser.rb (>= 0.5.1, < 0.9.0)
@@ -54,7 +54,7 @@ GEM
       mini_mime (>= 0.1.1)
     mini_mime (1.1.2)
     minitest (5.15.0)
-    msgpack (1.4.5)
+    msgpack (1.5.1)
     multi_json (1.15.0)
     net-http-persistent (4.0.1)
       connection_pool (~> 2.2)
