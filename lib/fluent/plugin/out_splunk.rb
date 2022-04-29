@@ -92,6 +92,10 @@ module Fluent::Plugin
       end
     end
 
+    def shutdown
+      super
+    end
+
     def write(chunk)
       log.trace { "#{self.class}: Received new chunk, size=#{chunk.read.bytesize}" }
 

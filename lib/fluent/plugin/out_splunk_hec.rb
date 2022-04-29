@@ -36,6 +36,9 @@ module Fluent::Plugin
     desc 'The port number to HEC, or HEC load balancer.'
     config_param :hec_port, :integer, default: 8088
 
+    desc 'HEC REST API endpoint to use'
+    config_param :hec_endpoint, :string, default: 'services/collector'
+
     desc 'Full url to connect tosplunk. Example: https://mydomain.com:8088/apps/splunk'
     config_param :full_url, :string, default: ''
 
@@ -166,8 +169,8 @@ module Fluent::Plugin
     end
 
     def shutdown
+      @conn.shutdown if not @conn.nil?
       super
-      @conn.shutdown
     end
 
     def format(tag, time, record)
@@ -287,9 +290,9 @@ module Fluent::Plugin
 
     def construct_api
       if @full_url.empty?
-        URI("#{@protocol}://#{@hec_host}:#{@hec_port}/services/collector")
+        URI("#{@protocol}://#{@hec_host}:#{@hec_port}/#{@hec_endpoint.delete_prefix("/")}")
       else
-        URI("#{@full_url.delete_suffix("/")}/services/collector")
+        URI("#{@full_url.delete_suffix("/")}/#{@hec_endpoint.delete_prefix("/")}")
       end
     rescue StandardError
       if @full_url.empty?
