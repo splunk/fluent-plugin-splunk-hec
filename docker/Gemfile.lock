@@ -155,7 +155,7 @@ GEM
       activesupport
       httpclient (>= 2.4)
     webrick (1.7.0)
-    yajl-ruby (1.4.2)
+    yajl-ruby (1.4.3)
 
 PLATFORMS
   ruby
