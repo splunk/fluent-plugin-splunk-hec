@@ -1,3 +1,13 @@
+GIT
+  remote: https://github.com/splunk/fluent-plugin-kubernetes_metadata_filter.git
+  revision: 77082c29e4dbfa09613619cef433372e59cf4034
+  ref: 77082c2
+  specs:
+    fluent-plugin-kubernetes_metadata_filter (2.10.0)
+      fluentd (>= 0.14.0, < 1.15)
+      kubeclient (>= 4.0.0, < 5.0.0)
+      lru_redux
+
 PATH
   remote: gem
   specs:
@@ -37,10 +47,6 @@ GEM
     fluent-plugin-jq (0.5.1)
       fluentd (>= 0.14.10, < 2)
       multi_json (~> 1.13)
-    fluent-plugin-kubernetes_metadata_filter (2.9.4)
-      fluentd (>= 0.14.0, < 1.15)
-      kubeclient (>= 4.0.0, < 5.0.0)
-      lru_redux
     fluent-plugin-prometheus (2.0.2)
       fluentd (>= 1.9.1, < 2)
       prometheus-client (>= 2.1.0)
@@ -67,7 +73,7 @@ GEM
       http-form_data (~> 2.2)
       http-parser (~> 1.2.0)
     http-accept (1.7.0)
-    http-cookie (1.0.4)
+    http-cookie (1.0.5)
       domain_name (~> 0.5)
     http-form_data (2.3.0)
     http-parser (1.2.3)
@@ -80,7 +86,7 @@ GEM
       activesupport (>= 4.2)
       aes_key_wrap
       bindata
-    jsonpath (1.1.0)
+    jsonpath (1.1.2)
       multi_json
     kubeclient (4.9.3)
       http (>= 3.0, < 5.0)
@@ -144,7 +150,7 @@ GEM
       tzinfo (>= 1.0.0)
     unf (0.1.4)
       unf_ext
-    unf_ext (0.0.8)
+    unf_ext (0.0.8.2)
     validate_email (0.1.6)
       activemodel (>= 3.0)
       mail (>= 2.2.5)
@@ -164,7 +170,7 @@ DEPENDENCIES
   activesupport (~> 5.2.4.3)
   fluent-plugin-concat (= 2.4.0)
   fluent-plugin-jq (= 0.5.1)
-  fluent-plugin-kubernetes_metadata_filter (>= 2.9.2)
+  fluent-plugin-kubernetes_metadata_filter!
   fluent-plugin-prometheus (= 2.0.2)
   fluent-plugin-record-modifier (>= 2.1)
   fluent-plugin-splunk-hec!
