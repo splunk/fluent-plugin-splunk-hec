@@ -60,6 +60,12 @@ describe Fluent::Plugin::SplunkHecOutput do
     it 'should consume chunks on 4xx errors' do
       expect(create_hec_output_driver('hec_host hec_token').instance.consume_chunk_on_4xx_errors).must_equal true
     end
+    it 'should default gzip off' do
+      expect(create_hec_output_driver('hec_host hec_token').instance.gzip_compression).must_equal false
+    end
+    it 'should support enabling gzip' do
+      expect(create_hec_output_driver('hec_host hec_token', 'gzip_compression true').instance.gzip_compression).must_equal true
+    end
   end
 
   describe 'hec_host validation' do
@@ -357,11 +363,35 @@ describe Fluent::Plugin::SplunkHecOutput do
     end
   end
 
+  describe 'gzip encoding' do
+    it 'should include gzip header when enabled' do
+      metrics = [
+        ['tag', event_time, { 'cup': 0.5, 'memory': 100 }]
+      ]
+      with_stub_hec_gzip(events: metrics, conf: 'data_type metric')
+    end
+  end
+
   def with_stub_hec(events:, conf: '')
     host = 'hec.splunk.com'
     @driver = create_hec_output_driver("hec_host #{host}", conf)
 
     hec_req = stub_hec_request("https://#{host}:8088").with do |r|
+      yield r.body.split(/(?={)\s*(?<=})/).map { |item| JSON.load item }
+    end
+
+    @driver.run do
+      events.each { |evt| @driver.feed *evt }
+    end
+
+    hec_req
+  end
+
+  def with_stub_hec_gzip(events:, conf: '')
+    host = 'hec.splunk.com'
+    @driver = create_hec_output_driver("hec_host #{host}", 'gzip_compression true', conf)
+
+    hec_req = stub_hec_gzip_request("https://#{host}:8088").with do |r|
       yield r.body.split(/(?={)\s*(?<=})/).map { |item| JSON.load item }
     end
 

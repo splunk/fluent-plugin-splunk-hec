@@ -42,4 +42,15 @@ module PluginTestHelper
                        'User-Agent' => "fluent-plugin-splunk_hec_out/#{Fluent::Plugin::SplunkHecOutput::VERSION}" })
       .to_return(body: '{"text":"Success","code":0}')
   end
+
+  def stub_hec_gzip_request(endpoint)
+    stub_request(:post, "#{endpoint}/services/collector")
+      .with(headers: {
+        'Authorization' => "Splunk #{TEST_HEC_TOKEN}",
+        'User-Agent' => "fluent-plugin-splunk_hec_out/#{Fluent::Plugin::SplunkHecOutput::VERSION}",
+        'Content-Encoding' => "gzip"
+      },
+      )
+      .to_return(body: '{"text":"GzipSuccess","code":0}')
+  end
 end

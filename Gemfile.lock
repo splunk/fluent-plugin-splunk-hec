@@ -28,6 +28,7 @@ GEM
     cool.io (1.7.1)
     crack (0.4.5)
       rexml
+    digest (3.1.0)
     docile (1.4.0)
     fluentd (1.14.6)
       bundler
@@ -46,6 +47,7 @@ GEM
     httpclient (2.8.3)
     i18n (1.10.0)
       concurrent-ruby (~> 1.0)
+    io-wait (0.2.1)
     json-jwt (1.13.0)
       activesupport (>= 4.2)
       aes_key_wrap
@@ -58,6 +60,13 @@ GEM
     multi_json (1.15.0)
     net-http-persistent (4.0.1)
       connection_pool (~> 2.2)
+    net-protocol (0.1.2)
+      io-wait
+      timeout
+    net-smtp (0.3.1)
+      digest
+      net-protocol
+      timeout
     openid_connect (1.1.8)
       activemodel
       attr_required (>= 1.0.0)
@@ -96,6 +105,7 @@ GEM
       httpclient (>= 2.4)
     test-unit (3.5.3)
       power_assert
+    timeout (0.2.0)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
     tzinfo-data (1.2022.1)
@@ -123,6 +133,7 @@ DEPENDENCIES
   bundler (~> 2.0)
   fluent-plugin-splunk-hec!
   minitest (~> 5.0)
+  net-smtp
   rake (>= 12.0)
   simplecov
   test-unit (~> 3.0)
