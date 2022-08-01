@@ -9,6 +9,7 @@ require 'fluent/plugin/out_splunk'
 require 'openssl'
 require 'multi_json'
 require 'net/http/persistent'
+require 'zlib'
 
 module Fluent::Plugin
   class SplunkHecOutput < SplunkOutput
@@ -95,6 +96,9 @@ module Fluent::Plugin
 
     desc 'When set to true, all fields defined in `index_key`, `host_key`, `source_key`, `sourcetype_key`, `metric_name_key`, `metric_value_key` will not be removed from the original event.'
     config_param :keep_keys, :bool, default: false
+
+    desc 'Indicates if GZIP Compression is enabled.'
+    config_param :gzip_compression, :bool, default: false
 
     desc 'App name'
     config_param :app_name, :string, default: "hec_plugin_gem"
@@ -321,13 +325,20 @@ module Fluent::Plugin
         c.override_headers['Authorization'] = "Splunk #{@hec_token}"
         c.override_headers['__splunk_app_name'] = "#{@app_name}"
         c.override_headers['__splunk_app_version'] = "#{@app_version}"
-
       end
     end
 
     def write_to_splunk(chunk)
       post = Net::HTTP::Post.new @api.request_uri
-      post.body = chunk.read
+      if @gzip_compression
+        post.add_field("Content-Encoding", "gzip")
+        gzip_stream = Zlib::GzipWriter.new StringIO.new
+        gzip_stream << chunk.read
+        post.body = gzip_stream.close.string
+      else
+        post.body = chunk.read
+      end
+
       log.debug { "[Sending] Chunk: #{dump_unique_id_hex(chunk.unique_id)}(#{post.body.bytesize}B)." }
       log.trace { "POST #{@api} body=#{post.body}" }
       begin
