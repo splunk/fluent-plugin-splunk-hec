@@ -1,0 +1,5 @@
+version: 3
+server: https://app.fossa.com
+project:
+  id: "fluent-plugin-splunk-hec"
+  team: "TA-Automation"
