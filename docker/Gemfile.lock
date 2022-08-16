@@ -1,3 +1,14 @@
+GIT
+  remote: https://github.com/splunk/kubeclient.git
+  revision: 955ec5b62f64b6065b25a7c0c76467e8b6badf17
+  ref: 955ec5b
+  specs:
+    kubeclient (4.9.3)
+      http (>= 3.0, < 5.0)
+      jsonpath (~> 1.0)
+      recursive-open-struct (~> 1.1, >= 1.1.1)
+      rest-client (~> 2.0)
+
 PATH
   remote: gem
   specs:
@@ -37,7 +48,7 @@ GEM
     fluent-plugin-jq (0.5.1)
       fluentd (>= 0.14.10, < 2)
       multi_json (~> 1.13)
-    fluent-plugin-kubernetes_metadata_filter (2.9.4)
+    fluent-plugin-kubernetes_metadata_filter (2.11.1)
       fluentd (>= 0.14.0, < 1.15)
       kubeclient (>= 4.0.0, < 5.0.0)
       lru_redux
@@ -82,11 +93,6 @@ GEM
       bindata
     jsonpath (1.1.0)
       multi_json
-    kubeclient (4.9.3)
-      http (>= 3.0, < 5.0)
-      jsonpath (~> 1.0)
-      recursive-open-struct (~> 1.1, >= 1.1.1)
-      rest-client (~> 2.0)
     lru_redux (1.1.0)
     mail (2.7.1)
       mini_mime (>= 0.1.1)
@@ -164,13 +170,14 @@ DEPENDENCIES
   activesupport (~> 5.2.4.3)
   fluent-plugin-concat (= 2.4.0)
   fluent-plugin-jq (= 0.5.1)
-  fluent-plugin-kubernetes_metadata_filter (>= 2.9.2)
+  fluent-plugin-kubernetes_metadata_filter (~> 2.11, >= 2.11.1)
   fluent-plugin-prometheus (= 2.0.2)
   fluent-plugin-record-modifier (>= 2.1)
   fluent-plugin-splunk-hec!
   fluent-plugin-systemd (= 1.0.2)
   fluentd (>= 1.14.5)
   http_parser.rb (= 0.8.0)
+  kubeclient!
   multi_json (~> 1.13)
   net-http-persistent (~> 4.0)
   oj (= 3.11.2)
