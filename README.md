@@ -400,6 +400,9 @@ Specifies which formatter to use.
 
 The following parameters can be used for tuning HTTP connections:
 
+#### gzip_compression (boolean)
+Whether to use gzip compression on outbound posts. This parameter is set to `false` by default for backwards compatibility.
+
 #### idle_timeout (integer)
 
 The default is five seconds. If a connection has not been used for five seconds, it is automatically reset at next use, in order to avoid attempting to send to a closed connection. Specifiy `nil` to prohibit any timeouts.
