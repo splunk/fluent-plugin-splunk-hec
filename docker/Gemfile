@@ -17,7 +17,7 @@ gem 'openid_connect', '~> 1.1.8'
 gem 'prometheus-client', '>= 2.1.0'
 gem 'activesupport', '~> 5.2.4.3'
 gem 'http_parser.rb', '=0.8.0'
-gem "rack", "=2.2.3.1"
+gem "rack", ">=3.0.0"
 gem "fluent-plugin-record-modifier", ">=2.1"
 
 
