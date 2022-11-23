@@ -12,12 +12,14 @@ GIT
 PATH
   remote: gem
   specs:
-    fluent-plugin-splunk-hec (1.3.0)
+    fluent-plugin-splunk-hec (1.3.1)
       fluentd (>= 1.5)
+      json-jwt (~> 1.15.0)
       multi_json (~> 1.13)
       net-http-persistent (~> 4.0)
       openid_connect (~> 1.1.8)
       prometheus-client (>= 2.1.0)
+      rack-oauth2 (~> 1.19)
 
 GEM
   remote: https://rubygems.org/
@@ -33,7 +35,7 @@ GEM
       public_suffix (>= 2.0.2, < 5.0)
     aes_key_wrap (1.1.0)
     attr_required (1.0.1)
-    bindata (2.4.10)
+    bindata (2.4.14)
     concurrent-ruby (1.1.9)
     connection_pool (2.2.5)
     cool.io (1.7.1)
@@ -87,10 +89,11 @@ GEM
     httpclient (2.8.3)
     i18n (1.9.1)
       concurrent-ruby (~> 1.0)
-    json-jwt (1.13.0)
+    json-jwt (1.15.3)
       activesupport (>= 4.2)
       aes_key_wrap
       bindata
+      httpclient
     jsonpath (1.1.0)
       multi_json
     lru_redux (1.1.0)
@@ -177,6 +180,7 @@ DEPENDENCIES
   fluent-plugin-systemd (= 1.0.2)
   fluentd (>= 1.15)
   http_parser.rb (= 0.8.0)
+  json-jwt (~> 1.15.0)
   kubeclient!
   multi_json (~> 1.13)
   net-http-persistent (~> 4.0)
@@ -184,6 +188,7 @@ DEPENDENCIES
   openid_connect (~> 1.1.8)
   prometheus-client (>= 2.1.0)
   rack (>= 3.0.0)
+  rack-oauth2 (~> 1.19)
 
 BUNDLED WITH
    2.3.11
