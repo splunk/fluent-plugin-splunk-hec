@@ -19,6 +19,8 @@ gem 'activesupport', '~> 5.2.4.3'
 gem 'http_parser.rb', '=0.8.0'
 gem "rack", ">=3.0.0"
 gem "fluent-plugin-record-modifier", ">=2.1"
+gem 'json-jwt', '~> 1.15.0'
+gem 'rack-oauth2', '~> 1.19'
 
 
 gem 'fluent-plugin-splunk-hec', path: 'gem/'
