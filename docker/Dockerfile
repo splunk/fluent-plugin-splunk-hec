@@ -47,7 +47,8 @@ RUN yum update -y \
 RUN groupadd -r $FLUENT_USER && \
    useradd -r -g $FLUENT_USER $FLUENT_USER && \
    mkdir -p /fluentd/log /fluentd/etc /fluentd/plugins &&\
-   chown -R $FLUENT_USER /fluentd && chgrp -R $FLUENT_USER /fluentd
+   chown -R $FLUENT_USER /fluentd && chgrp -R $FLUENT_USER /fluentd && \
+   chmod +t /tmp
 
 USER $FLUENT_USER
 CMD bundle exec fluentd -c /fluentd/etc/fluent.conf
