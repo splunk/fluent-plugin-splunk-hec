@@ -71,8 +71,7 @@ describe Fluent::Plugin::SplunkHecOutput do
       expect(create_hec_output_driver('hec_host hec_token').instance.custom_headers).is_a? Hash
     end
     it 'should allow setting custom_headers' do
-      assert_empty(create_hec_output_driver('hec_host hec_token', 'custom_headers {"custom":"header"}').instance.custom_headers)
-      expect(create_hec_output_driver('hec_host hec_token').instance.custom_headers).must_equal {"custom":"header"}
+      assert_equal(create_hec_output_driver('hec_host hec_token', 'custom_headers {"custom":"header"}').instance.custom_headers, {"custom" => "header"})
     end
   end
 
