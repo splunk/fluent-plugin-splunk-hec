@@ -1,3 +1,7 @@
+# End of Support
+
+**Important:** The fluent-plugin-splunk-hec will reach End of Support on January 1, 2024. After that date, this repository will no longer receive updates from Splunk and will no longer be supported by Splunk. Until then, only critical security fixes and bug fixes will be provided.
+
 # fluent-plugin-splunk-hec
 
 [Fluentd](https://fluentd.org/) output plugin to send events and metrics to [Splunk](https://www.splunk.com) in 2 modes:<br/>
@@ -287,6 +291,10 @@ Splunk app name using this plugin (default to `hec_plugin_gem`)
 ### app_version (string) (Optional)
 
 The version of Splunk app using this this plugin (default to plugin version)
+
+### custom_headers (Hash) (Optional)
+
+Hash of custom headers to be added to the HTTP request. Used to populate [`override_headers`](https://docs.seattlerb.org/net-http-persistent/Net/HTTP/Persistent.html#attribute-i-override_headers) attribute of the underlying `Net::HTTP::Persistent` connection.
 
 #### When `data_type` is `event`
 

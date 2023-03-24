@@ -66,6 +66,13 @@ describe Fluent::Plugin::SplunkHecOutput do
     it 'should support enabling gzip' do
       expect(create_hec_output_driver('hec_host hec_token', 'gzip_compression true').instance.gzip_compression).must_equal true
     end
+    it 'should define custom_headers as {} (hash) initially' do
+      assert_empty(create_hec_output_driver('hec_host hec_token').instance.custom_headers)
+      expect(create_hec_output_driver('hec_host hec_token').instance.custom_headers).is_a? Hash
+    end
+    it 'should allow setting custom_headers' do
+      assert_equal(create_hec_output_driver('hec_host hec_token', 'custom_headers {"custom":"header"}').instance.custom_headers, {"custom" => "header"})
+    end
   end
 
   describe 'hec_host validation' do
