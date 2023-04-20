@@ -1,4 +1,4 @@
-FROM ruby:2.7.4-buster as builder
+FROM ruby:3.1.2-buster as builder
 
 ADD ./ /app/
 WORKDIR /app
@@ -8,7 +8,7 @@ RUN bundle install
 
 RUN bundle exec rake build -t -v
 
-FROM registry.access.redhat.com/ubi8/ruby-27
+FROM registry.access.redhat.com/ubi8/ruby-31
 
 ARG VERSION
 
