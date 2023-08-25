@@ -29,5 +29,7 @@ kubectl get pod
 # metric and logging deamon set for each node + aggr + object + splunk
 PODS=$((MINIKUBE_NODE_COUNTS*2+2+1))
 until kubectl get pod | grep Running | [[ $(wc -l) == $PODS ]]; do
+   kubectl describe pods $(kubectl get pod | grep "ci-sck-splunk-kubernetes-logging" | awk 'NR==1{print $1}')
+   kubectl describe pods $(kubectl get pod | grep "ci-sck-splunk-kubernetes-metrics" | awk 'NR==1{print $1}')
    sleep 1;
 done
