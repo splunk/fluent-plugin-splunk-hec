@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -17,7 +17,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          ruby-version: 2.7
+          ruby-version: 3.0
 
       - name: Install dependencies
         run: |
@@ -35,7 +35,7 @@ jobs:
           key: ${{ runner.os }}-build
 
   unit-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs:
       - build
     steps:
@@ -58,7 +58,7 @@ jobs:
   func-test:
     needs:
       - unit-test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       CI_SPLUNK_PORT: 8089
       CI_SPLUNK_USERNAME: admin
