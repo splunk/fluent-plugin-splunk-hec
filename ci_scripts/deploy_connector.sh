@@ -27,7 +27,7 @@ helm install ci-sck --set global.splunk.hec.token=$CI_SPLUNK_HEC_TOKEN \
 kubectl get pod
 # wait for deployment to finish
 # metric and logging deamon set for each node + aggr + object + splunk
-PODS=$((MINIKUBE_NODE_COUNTS*2+2+1))
+PODS=$((MINIKUBE_NODE_COUNTS*2+2))
 until kubectl get pod | grep Running | [[ $(wc -l) == $PODS ]]; do
    sleep 1;
 done
