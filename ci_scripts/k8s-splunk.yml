@@ -9,7 +9,7 @@ spec:
     runAsGroup: 0
   containers:
   - name: splunk
-    image: splunk/splunk:9.0.4
+    image: splunk/splunk:latest
     ports:
     - containerPort: 8000
       hostPort: 8000
