@@ -141,7 +141,7 @@ GEM
       webfinger (>= 1.0.1)
     prometheus-client (4.2.1)
     public_suffix (5.0.3)
-    rack (3.0.8)
+    rack (3.0.6.1)
     rack-oauth2 (1.21.3)
       activesupport
       attr_required
@@ -209,7 +209,7 @@ DEPENDENCIES
   oj (>= 3.11.2)
   openid_connect (~> 1.1.8)
   prometheus-client (>= 2.1.0)
-  rack (>= 3.0.0)
+  rack (= 3.0.6.1)
   rack-oauth2 (~> 1.19)
 
 BUNDLED WITH
