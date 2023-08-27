@@ -23,11 +23,12 @@ helm install ci-sck --set global.splunk.hec.token=$CI_SPLUNK_HEC_TOKEN \
 --set splunk-kubernetes-logging.image.tag=recent \
 --set splunk-kubernetes-logging.image.pullPolicy=IfNotPresent \
 -f ci_scripts/sck_values.yml helm-chart/splunk-connect-for-kubernetes
-
+# kubectl get pod | grep "ci-sck-splunk-kubernetes-logging" | awk 'NR==1{print $1}
 kubectl get pod
 # wait for deployment to finish
 # metric and logging deamon set for each node + aggr + object + splunk
 PODS=$((MINIKUBE_NODE_COUNTS*2+2+1))
 until kubectl get pod | grep Running | [[ $(wc -l) == $PODS ]]; do
-   sleep 1;
+   kubectl get pod
+   sleep 2;
 done

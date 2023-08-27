@@ -17,7 +17,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          ruby-version: 2.7
+          ruby-version: 3.1
 
       - name: Install dependencies
         run: |
@@ -67,6 +67,7 @@ jobs:
       CI_INDEX_EVENTS: ci_events
       CI_INDEX_OBJECTS: ci_objects
       CI_INDEX_METRICS: ci_metrics
+      # CI_SPLUNK_HOST: ${{ secrets.CI_SPLUNK_HOST }}
       KUBERNETES_VERSION: v1.23.2
       MINIKUBE_VERSION: v1.24.0
       MINIKUBE_NODE_COUNTS: 2
