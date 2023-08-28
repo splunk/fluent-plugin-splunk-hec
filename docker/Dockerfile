@@ -1,4 +1,4 @@
-FROM ruby:2.7.4-buster as builder
+FROM ruby:3.1.4-buster as builder
 
 ADD ./ /app/
 WORKDIR /app
@@ -8,7 +8,7 @@ RUN bundle install
 
 RUN bundle exec rake build -t -v
 
-FROM registry.access.redhat.com/ubi8/ruby-27
+FROM registry.access.redhat.com/ubi9/ruby-31
 
 ARG VERSION
 
@@ -33,8 +33,6 @@ COPY --from=builder /app/LICENSE /licenses/LICENSE
 RUN dnf install -y jq
 
 COPY --from=builder /app/docker/Gemfile* ./
-RUN gem update date cgi
-RUN rm -f /usr/share/gems/specifications/default/cgi-0.1.0.gemspec /usr/share/gems/specifications/default/date-3.0.0.gemspec 
 RUN yum update -y \
    && yum remove -y nodejs npm \
    && gem install bundler \
