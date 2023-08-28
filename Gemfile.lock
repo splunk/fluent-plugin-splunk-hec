@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fluent-plugin-splunk-hec (1.3.2)
+    fluent-plugin-splunk-hec (1.3.3)
       fluentd (>= 1.5)
       json-jwt (~> 1.15.0)
       multi_json (~> 1.13)
