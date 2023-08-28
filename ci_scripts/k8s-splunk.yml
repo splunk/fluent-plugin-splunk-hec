@@ -26,6 +26,6 @@ spec:
     - name: SPLUNK_USER
       value: root
     - name: SPLUNK_PASSWORD
-      value: helloworld
+      value: changeme2
     - name: SPLUNK_LAUNCH_CONF
       value: OPTIMISTIC_ABOUT_FILE_LOCKING=1

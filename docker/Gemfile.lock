@@ -24,9 +24,9 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (7.0.4.3)
-      activesupport (= 7.0.4.3)
-    activesupport (7.0.4.3)
+    activemodel (7.0.7.2)
+      activesupport (= 7.0.7.2)
+    activesupport (7.0.7.2)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -59,7 +59,7 @@ GEM
     fluent-plugin-prometheus (2.0.2)
       fluentd (>= 1.9.1, < 2)
       prometheus-client (>= 2.1.0)
-    fluent-plugin-record-modifier (2.1.1)
+    fluent-plugin-record-modifier (2.1.0)
       fluentd (>= 1.0, < 2)
     fluent-plugin-systemd (1.0.2)
       fluentd (>= 0.14.11, < 2)
@@ -172,8 +172,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  activesupport (~> 7.0.4.3)
   cgi (~> 0.3.6)
+  date (~> 3.3.3)
   fluent-plugin-concat (= 2.4.0)
   fluent-plugin-jq (= 0.5.1)
   fluent-plugin-kubernetes_metadata_filter (~> 3.1)
